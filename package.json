@@ -1,1 +1,17 @@
-{\n  "name": "cosmic-saas",\n  "version": "1.0.0",\n  "description": "A SaaS application for cosmic data management.",\n  "main": "index.js",\n  "scripts": {\n    "test": "echo 'Error: no test specified' && exit 1"\n  },\n  "author": "",\n  "license": "ISC"\n}
+{
+  "name": "cosmic-saas",
+  "version": "1.0.0",
+  "description": "Production-Ready SaaS Platform - Hackathon + AI Hiring + Tests + Wallet",
+  "private": true,
+  "scripts": {
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:generate": "cd backend && npm run db:generate"
+  },
+  "author": "SriHarsha379",
+  "license": "MIT"
+}

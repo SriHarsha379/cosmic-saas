@@ -1,0 +1,387 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  COMPANY
+}
+
+enum HackathonStatus {
+  ACTIVE
+  UPCOMING
+  COMPLETED
+}
+
+enum TeamMemberRole {
+  MEMBER
+  LEADER
+}
+
+enum JoinRequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum InterviewStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum ProctorLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum ApplicationStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum QuestionType {
+  MCQ
+  CODING
+  ESSAY
+  TRUE_FALSE
+}
+
+enum TestResultStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum ActivityType {
+  JOINED_HACKATHON
+  CREATED_TEAM
+  COMPLETED_TEST
+  WON_CHALLENGE
+  APPLIED_JOB
+  JOINED_INTERVIEW
+  EARNED_CERTIFICATE
+}
+
+enum BotType {
+  CODING
+  APTITUDE
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  password       String
+  firstName      String
+  lastName       String
+  role           Role     @default(USER)
+  isPro          Boolean  @default(false)
+  avatar         String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  profile              Profile?
+  hackathonParticipants HackathonParticipant[]
+  teamMembers           TeamMember[]
+  joinRequests          JoinRequest[]
+  interviews            Interview[]
+  applications          Application[]
+  testResults           TestResult[]
+  wallet                Wallet?
+  transactions          Transaction[]
+  certificates          Certificate[]
+  activities            Activity[]
+  chatHistories         ChatHistory[]
+  leaderboardEntries    Leaderboard[]
+  progress              Progress?
+  teamsCreated          Team[]           @relation("TeamCreator")
+  testsCreated          Test[]           @relation("TestCreator")
+}
+
+model Profile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  phone             String?
+  bio               String?
+  skills            Json     @default("[]")
+  education         Json     @default("[]")
+  projects          Json     @default("[]")
+  resumeUrl         String?
+  profileCompletion Int      @default(0)
+  updatedAt         DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Hackathon {
+  id              String          @id @default(cuid())
+  title           String
+  description     String
+  status          HackathonStatus @default(UPCOMING)
+  startDate       DateTime
+  endDate         DateTime
+  image           String?
+  maxParticipants Int             @default(100)
+  prizePool       String?
+  createdAt       DateTime        @default(now())
+
+  participants  HackathonParticipant[]
+  teams         Team[]
+  leaderboards  Leaderboard[]
+}
+
+model HackathonParticipant {
+  id           String   @id @default(cuid())
+  userId       String
+  hackathonId  String
+  joinedAt     DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, hackathonId])
+}
+
+model Team {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  hackathonId String?
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  hackathon   Hackathon?   @relation(fields: [hackathonId], references: [id])
+  creator     User         @relation("TeamCreator", fields: [createdBy], references: [id])
+  members     TeamMember[]
+  joinRequests JoinRequest[]
+}
+
+model TeamMember {
+  id       String         @id @default(cuid())
+  teamId   String
+  userId   String
+  role     TeamMemberRole @default(MEMBER)
+  joinedAt DateTime       @default(now())
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model JoinRequest {
+  id          String            @id @default(cuid())
+  teamId      String
+  userId      String
+  status      JoinRequestStatus @default(PENDING)
+  requestedAt DateTime          @default(now())
+  respondedAt DateTime?
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, userId])
+}
+
+model Interview {
+  id           String          @id @default(cuid())
+  userId       String
+  link         String          @unique @default(cuid())
+  status       InterviewStatus @default(SCHEDULED)
+  startTime    DateTime?
+  endTime      DateTime?
+  proctorLevel ProctorLevel    @default(MEDIUM)
+  recordingUrl String?
+  createdAt    DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id              String   @id @default(cuid())
+  title           String
+  company         String
+  description     String
+  skills          Json     @default("[]")
+  location        String
+  experienceLevel String
+  salaryMin       Int?
+  salaryMax       Int?
+  isRemote        Boolean  @default(false)
+  postedAt        DateTime @default(now())
+  expiresAt       DateTime?
+
+  applications Application[]
+}
+
+model Application {
+  id          String            @id @default(cuid())
+  userId      String
+  jobId       String
+  status      ApplicationStatus @default(PENDING)
+  coverLetter String?
+  appliedAt   DateTime          @default(now())
+  respondedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
+}
+
+model Test {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  totalScore  Int        @default(100)
+  duration    Int        @default(60)
+  difficulty  Difficulty @default(MEDIUM)
+  createdBy   String
+  createdAt   DateTime   @default(now())
+
+  creator    User           @relation("TestCreator", fields: [createdBy], references: [id])
+  questions  TestQuestion[]
+  results    TestResult[]
+}
+
+model TestQuestion {
+  id            String       @id @default(cuid())
+  testId        String
+  question      String
+  type          QuestionType @default(MCQ)
+  options       Json         @default("[]")
+  correctAnswer String?
+  score         Int          @default(10)
+  order         Int          @default(0)
+
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
+model TestResult {
+  id              String           @id @default(cuid())
+  userId          String
+  testId          String
+  answers         Json             @default("[]")
+  score           Int              @default(0)
+  accuracy        Float            @default(0)
+  duration        Int              @default(0)
+  status          TestResultStatus @default(IN_PROGRESS)
+  attemptNumber   Int              @default(1)
+  plagiarismScore Float            @default(0)
+  completedAt     DateTime?
+  createdAt       DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
+model Wallet {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  balance     Float    @default(0)
+  currency    String   @default("USD")
+  lastUpdated DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Transaction {
+  id             String          @id @default(cuid())
+  userId         String
+  type           TransactionType
+  amount         Float
+  description    String
+  balanceBefore  Float
+  balanceAfter   Float
+  timestamp      DateTime        @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Certificate {
+  id             String   @id @default(cuid())
+  userId         String
+  title          String
+  earnedAt       DateTime @default(now())
+  issuedBy       String
+  certificateUrl String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Activity {
+  id          String       @id @default(cuid())
+  userId      String
+  type        ActivityType
+  description String
+  timestamp   DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ChatHistory {
+  id             String   @id @default(cuid())
+  userId         String
+  botType        BotType  @default(CODING)
+  messages       Json     @default("[]")
+  lastMessageAt  DateTime @default(now())
+  conversationId String   @default(cuid())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CompanyChallenge {
+  id        String   @id @default(cuid())
+  title     String
+  company   String
+  testId    String?
+  createdAt DateTime @default(now())
+
+  leaderboards Leaderboard[]
+}
+
+model Leaderboard {
+  id          String   @id @default(cuid())
+  userId      String
+  hackathonId String?
+  challengeId String?
+  score       Int      @default(0)
+  rank        Int      @default(0)
+  lastUpdated DateTime @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hackathon Hackathon?        @relation(fields: [hackathonId], references: [id])
+  challenge CompanyChallenge? @relation(fields: [challengeId], references: [id])
+}
+
+model Progress {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  totalTests    Int      @default(0)
+  testsPassed   Int      @default(0)
+  totalScore    Int      @default(0)
+  averageScore  Float    @default(0)
+  lastUpdatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
