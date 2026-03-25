@@ -1,0 +1,1 @@
+{\n  "name": "cosmic-saas",\n  "version": "1.0.0",\n  "description": "A SaaS application for cosmic data management.",\n  "main": "index.js",\n  "scripts": {\n    "test": "echo 'Error: no test specified' && exit 1"\n  },\n  "author": "",\n  "license": "ISC"\n}
