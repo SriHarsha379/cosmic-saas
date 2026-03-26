@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Users, Calendar, Trophy, Plus, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { hackathonService } from '@/services/hackathon.service';
+import { useAuthStore } from '@/store/authStore';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorMessage from '@/components/ui/ErrorMessage';
 
@@ -101,6 +103,9 @@ function HackathonCard({ hackathon }: { hackathon: any }) {
 
 export default function HackathonsPage() {
   const [status, setStatus] = useState('');
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const isAdmin = user?.role === 'ADMIN';
   const { data: rawData, isLoading, error, refetch } = useQuery({
     queryKey: ['hackathons', status],
     queryFn: () => hackathonService.getAll(status || undefined),
@@ -115,9 +120,14 @@ export default function HackathonsPage() {
           <h2 className="text-2xl font-bold text-white">Hackathons</h2>
           <p className="text-sm text-gray-400 mt-0.5">Compete in exciting hackathons and win prizes</p>
         </div>
-        <button className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300">
-          <Plus className="w-4 h-4" /> Create Hackathon
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => router.push('/admin/hackathons/create')}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-300"
+          >
+            <Plus className="w-4 h-4" /> Create Hackathon
+          </button>
+        )}
       </div>
 
       <div className="flex gap-2 flex-wrap">

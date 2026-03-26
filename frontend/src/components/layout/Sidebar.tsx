@@ -17,6 +17,8 @@ import {
   LogOut,
   Menu,
   X,
+  ShieldCheck,
+  UserCog,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useState } from 'react';
@@ -36,10 +38,17 @@ const menuItems = [
   { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
+const adminMenuItems = [
+  { icon: ShieldCheck, label: 'Admin Dashboard', href: '/admin' },
+  { icon: Trophy, label: 'Manage Hackathons', href: '/admin/hackathons' },
+  { icon: UserCog, label: 'Manage Users', href: '/admin/users' },
+];
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, logout } = useAuthStore();
   const [open, setOpen] = useState(true);
+  const isAdmin = user?.role === 'ADMIN';
 
   return (
     <>
@@ -80,7 +89,7 @@ export default function Sidebar() {
               <p className="text-sm font-semibold text-white truncate">
                 {user?.firstName || 'User'} {user?.lastName || ''}
               </p>
-              <p className="text-xs text-gray-400">Candidate</p>
+              <p className="text-xs text-gray-400">{isAdmin ? 'Administrator' : 'Candidate'}</p>
             </div>
           </div>
         </div>
@@ -109,6 +118,38 @@ export default function Sidebar() {
               </Link>
             );
           })}
+
+          {isAdmin && (
+            <>
+              <div className="pt-4 pb-2">
+                <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider px-4">
+                  Admin
+                </p>
+              </div>
+              {adminMenuItems.map((item) => {
+                const isActive =
+                  pathname === item.href ||
+                  (item.href !== '/admin' && pathname.startsWith(item.href + '/'));
+                const Icon = item.icon;
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                      isActive
+                        ? 'bg-gradient-to-r from-amber-600 to-orange-600 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <span className="text-sm font-medium">{item.label}</span>
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
 
         {/* Footer */}

@@ -19,6 +19,7 @@ async function main() {
       password: hashedAdminPassword,
       firstName: 'Admin',
       lastName: 'User',
+      role: 'ADMIN',
       wallet: {
         create: { balance: 5000 },
       },
