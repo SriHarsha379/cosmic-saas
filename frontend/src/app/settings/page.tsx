@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { Bell, AlertTriangle, LogOut, Trash2, Save } from 'lucide-react';
+import { Bell, AlertTriangle, LogOut, Trash2, Save, Shield, ChevronRight } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,20 @@ interface NotificationPreferences {
   interviewsNotifications: boolean;
   jobsNotifications: boolean;
   testsNotifications: boolean;
+}
+
+function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <button
+      onClick={onChange}
+      className={`toggle-track ${checked ? 'on' : ''}`}
+      style={{ background: checked ? 'linear-gradient(135deg, #8B5CF6, #3B82F6)' : 'rgba(255,255,255,0.1)' }}
+      role="switch"
+      aria-checked={checked}
+    >
+      <span className="toggle-thumb" />
+    </button>
+  );
 }
 
 export default function SettingsPage() {
@@ -32,169 +46,132 @@ export default function SettingsPage() {
       const res = await api.put('/users/profile', { notificationPreferences: data });
       return res.data.data;
     },
-    onSuccess: () => {
-      toast.success('Preferences saved successfully');
-    },
-    onError: () => {
-      toast.error('Failed to save preferences');
-    },
+    onSuccess: () => toast.success('Preferences saved'),
+    onError:   () => toast.error('Failed to save preferences'),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async () => {
-      const res = await api.delete('/users/profile');
-      return res.data;
-    },
-    onSuccess: () => {
-      toast.success('Account deleted successfully');
-      logout();
-      router.push('/login');
-    },
-    onError: () => {
-      toast.error('Failed to delete account');
-    },
+    mutationFn: async () => { const res = await api.delete('/users/profile'); return res.data; },
+    onSuccess: () => { toast.success('Account deleted'); logout(); router.push('/login'); },
+    onError:   () => toast.error('Failed to delete account'),
   });
 
   const notificationSettings = [
-    {
-      key: 'emailNotifications' as const,
-      label: 'Email Notifications',
-      description: 'Receive email related notifications',
-    },
-    {
-      key: 'hackathonsNotifications' as const,
-      label: 'Hackathons Notifications',
-      description: 'Receive hackathons related notifications',
-    },
-    {
-      key: 'interviewsNotifications' as const,
-      label: 'Interviews Notifications',
-      description: 'Receive interviews related notifications',
-    },
-    {
-      key: 'jobsNotifications' as const,
-      label: 'Jobs Notifications',
-      description: 'Receive jobs related notifications',
-    },
-    {
-      key: 'testsNotifications' as const,
-      label: 'Tests Notifications',
-      description: 'Receive tests related notifications',
-    },
+    { key: 'emailNotifications' as const,       label: 'Email Notifications',      desc: 'Receive notifications via email' },
+    { key: 'hackathonsNotifications' as const,  label: 'Hackathon Updates',         desc: 'Updates about hackathons you joined' },
+    { key: 'interviewsNotifications' as const,  label: 'Interview Reminders',       desc: 'Reminders for scheduled interviews' },
+    { key: 'jobsNotifications' as const,        label: 'Job Alerts',                desc: 'New job openings matching your profile' },
+    { key: 'testsNotifications' as const,       label: 'Test Notifications',        desc: 'Notifications about tests and results' },
   ];
-
-  const handleToggle = (key: keyof NotificationPreferences) => {
-    setPreferences({
-      ...preferences,
-      [key]: !preferences[key],
-    });
-  };
-
-  const handleSave = () => {
-    saveMutation.mutate(preferences);
-  };
-
-  const handleDeleteAccount = () => {
-    if (window.confirm('Are you sure? This action cannot be undone.')) {
-      deleteMutation.mutate();
-    }
-  };
-
-  const handleSignOut = async () => {
-    logout();
-    router.push('/login');
-  };
 
   return (
     <div className="max-w-2xl space-y-6 animate-slide-up">
+      {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-white">Settings</h2>
-        <p className="text-sm text-gray-400 mt-0.5">Manage your account preferences</p>
+        <h1 className="text-2xl font-bold text-white mb-1">Settings</h1>
+        <p className="text-sm text-gray-400">Manage your account preferences and security</p>
       </div>
 
-      {/* Notification Preferences */}
-      <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Bell className="w-5 h-5 text-purple-400" />
-          <h3 className="text-lg font-semibold text-white">Notification Preferences</h3>
+      {/* Notifications */}
+      <div className="glass-card overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/8 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-purple-500/15 border border-purple-500/20 flex items-center justify-center">
+            <Bell className="w-4 h-4 text-purple-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Notification Preferences</h3>
+            <p className="text-xs text-gray-500">Choose what you want to be notified about</p>
+          </div>
         </div>
 
-        <div className="space-y-4 mb-6">
+        <div className="divide-y divide-white/5">
           {notificationSettings.map((setting) => (
             <div
               key={setting.key}
-              className="flex items-center justify-between p-4 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+              className="flex items-center justify-between px-6 py-4 hover:bg-white/3 transition-colors"
             >
               <div>
-                <p className="font-medium text-white">{setting.label}</p>
-                <p className="text-sm text-gray-400">{setting.description}</p>
+                <p className="text-sm font-medium text-white">{setting.label}</p>
+                <p className="text-xs text-gray-500 mt-0.5">{setting.desc}</p>
               </div>
-              <button
-                onClick={() => handleToggle(setting.key)}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  preferences[setting.key]
-                    ? 'bg-gradient-to-r from-purple-600 to-blue-600'
-                    : 'bg-white/10'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    preferences[setting.key] ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
+              <Toggle
+                checked={preferences[setting.key]}
+                onChange={() => setPreferences({ ...preferences, [setting.key]: !preferences[setting.key] })}
+              />
             </div>
           ))}
         </div>
 
+        <div className="px-6 py-4 border-t border-white/8">
+          <button
+            onClick={() => saveMutation.mutate(preferences)}
+            disabled={saveMutation.isPending}
+            className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl px-5 py-2.5 text-sm font-semibold transition-all disabled:opacity-50 hover:shadow-lg hover:shadow-purple-500/20"
+          >
+            <Save className="w-4 h-4" />
+            {saveMutation.isPending ? 'Saving…' : 'Save Preferences'}
+          </button>
+        </div>
+      </div>
+
+      {/* Security section */}
+      <div className="glass-card overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/8 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/20 flex items-center justify-center">
+            <Shield className="w-4 h-4 text-blue-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-white">Account</h3>
+            <p className="text-xs text-gray-500">Manage your account access</p>
+          </div>
+        </div>
+
         <button
-          onClick={handleSave}
-          disabled={saveMutation.isPending}
-          className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg px-6 py-3 font-medium transition-all disabled:opacity-50"
+          onClick={() => { logout(); router.push('/auth/login'); }}
+          className="w-full flex items-center justify-between px-6 py-4 hover:bg-white/3 transition-colors text-left"
         >
-          <Save className="w-5 h-5" />
-          {saveMutation.isPending ? 'Saving...' : 'Save Preferences'}
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">
+              <LogOut className="w-4 h-4 text-gray-400" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-white">Sign Out</p>
+              <p className="text-xs text-gray-500">Sign out from all devices</p>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-gray-600" />
         </button>
       </div>
 
-      {/* Danger Zone */}
-      <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <AlertTriangle className="w-5 h-5 text-red-400" />
-          <h3 className="text-lg font-semibold text-red-400">Danger Zone</h3>
+      {/* Danger zone */}
+      <div className="glass-card overflow-hidden border-red-500/15">
+        <div className="px-6 py-4 border-b border-red-500/15 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-red-500/15 border border-red-500/20 flex items-center justify-center">
+            <AlertTriangle className="w-4 h-4 text-red-400" />
+          </div>
+          <div>
+            <h3 className="text-sm font-semibold text-red-400">Danger Zone</h3>
+            <p className="text-xs text-gray-500">Irreversible and destructive actions</p>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          {/* Delete Account */}
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="font-medium text-white">Delete Account</p>
-              <p className="text-sm text-gray-400">Permanently delete your account and all data</p>
-            </div>
-            <button
-              onClick={handleDeleteAccount}
-              disabled={deleteMutation.isPending}
-              className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
-            >
-              <Trash2 className="w-4 h-4" />
-              {deleteMutation.isPending ? 'Deleting...' : 'Delete Account'}
-            </button>
+        <div className="px-6 py-5 flex items-center justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-white">Delete Account</p>
+            <p className="text-xs text-gray-500 mt-0.5">Permanently delete your account and all associated data</p>
           </div>
-
-          {/* Sign Out */}
-          <div className="flex items-center justify-between p-4 bg-white/5 rounded-lg">
-            <div>
-              <p className="font-medium text-white">Sign Out</p>
-              <p className="text-sm text-gray-400">Sign out from all devices</p>
-            </div>
-            <button
-              onClick={handleSignOut}
-              className="flex items-center gap-2 px-4 py-2 border border-white/10 text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-all"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign Out
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              if (window.confirm('Are you absolutely sure? This action cannot be undone.')) {
+                deleteMutation.mutate();
+              }
+            }}
+            disabled={deleteMutation.isPending}
+            className="flex items-center gap-2 px-4 py-2 border border-red-500/30 text-red-400 hover:bg-red-500/10 hover:border-red-500/50 rounded-xl text-sm transition-all disabled:opacity-50 flex-shrink-0"
+          >
+            <Trash2 className="w-4 h-4" />
+            {deleteMutation.isPending ? 'Deleting…' : 'Delete'}
+          </button>
         </div>
       </div>
     </div>

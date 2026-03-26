@@ -1,92 +1,86 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Award, Download, Share2 } from 'lucide-react';
+import { Award, Download, ExternalLink, Calendar, Hash, Star } from 'lucide-react';
 import Link from 'next/link';
 import { certificateService } from '@/services/certificate.service';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import ErrorMessage from '@/components/ui/ErrorMessage';
 
 function CertificateCard({ cert }: { cert: any }) {
-  // Safe date formatting
-  const formatDate = (dateString: any) => {
-    if (!dateString) return 'N/A';
+  const formatDate = (d: any) => {
+    if (!d) return null;
     try {
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'N/A';
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch (error) {
-      return 'N/A';
-    }
+      const date = new Date(d);
+      if (isNaN(date.getTime())) return null;
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+    } catch { return null; }
   };
 
   const certId = cert.id || cert._id;
-  const issuedDate = formatDate(cert.issuedAt || cert.createdAt || new Date());
+  const issuedDate = formatDate(cert.issuedAt || cert.createdAt);
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl p-6 hover:bg-white/8 transition-all">
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-lg font-semibold text-white">{cert.title || 'Certificate'}</h3>
-          <p className="text-sm text-gray-400 mt-1">
-            Issued by {cert.issuedBy || 'Cosmic SaaS'}
-          </p>
+    <div className="cert-card glass-card hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+      {/* Header gradient band */}
+      <div className="h-24 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent relative overflow-hidden flex items-center justify-center">
+        <div className="absolute inset-0 dots-bg opacity-30" />
+        <div className="w-12 h-12 rounded-2xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center relative z-10 group-hover:scale-110 transition-transform duration-300">
+          <Award className="w-7 h-7 text-amber-400" />
         </div>
-        <Award className="w-8 h-8 text-amber-400" />
+        {/* Shine effect */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent" />
       </div>
 
-      <div className="space-y-2 text-sm text-gray-400 mb-4">
-        <p>
-          Issued on:{' '}
-          <span className="text-white font-medium">{issuedDate}</span>
-        </p>
-        {cert.expiresAt && (
-          <p>
-            Expires on:{' '}
-            <span className="text-white font-medium">
-              {formatDate(cert.expiresAt)}
-            </span>
-          </p>
-        )}
-        {cert.certificateId && (
-          <p>
-            Certificate ID:{' '}
-            <span className="text-white font-mono text-xs">{cert.certificateId}</span>
-          </p>
-        )}
-      </div>
+      <div className="p-5">
+        <h3 className="font-semibold text-white text-base leading-tight mb-1 line-clamp-1 group-hover:text-amber-400 transition-colors">
+          {cert.title || 'Certificate'}
+        </h3>
+        <p className="text-xs text-gray-500 mb-4">Issued by {cert.issuedBy || 'Cosmic SaaS'}</p>
 
-      <div className="flex gap-2">
-        {cert.certificateUrl ? (
-          <>
-            <a
-              href={cert.certificateUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-lg px-4 py-2 text-sm font-medium transition-all"
-            >
-              <Download className="w-4 h-4" />
-              Download
-            </a>
-            {certId && (
-              <Link
-                href={`/certificates/${certId}`}
-                className="p-2 text-gray-400 hover:text-white rounded-lg hover:bg-white/10 transition-all"
-                title="View Details"
+        <div className="space-y-1.5 mb-4">
+          {issuedDate && (
+            <div className="flex items-center gap-2 text-xs text-gray-400">
+              <Calendar className="w-3.5 h-3.5 text-gray-600" />
+              <span>Issued {issuedDate}</span>
+            </div>
+          )}
+          {cert.certificateId && (
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <Hash className="w-3.5 h-3.5 text-gray-700" />
+              <span className="font-mono truncate">{cert.certificateId}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-2">
+          {cert.certificateUrl ? (
+            <>
+              <a
+                href={cert.certificateUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-white rounded-xl px-3 py-2 text-xs font-semibold transition-all hover:shadow-lg hover:shadow-amber-500/25"
               >
-                <Share2 className="w-4 h-4" />
-              </Link>
-            )}
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center px-4 py-2 bg-white/5 rounded-lg text-gray-400 text-sm">
-            Certificate generated
-          </div>
-        )}
+                <Download className="w-3.5 h-3.5" /> Download
+              </a>
+              {certId && (
+                <Link
+                  href={`/certificates/${certId}`}
+                  className="p-2 text-gray-500 hover:text-white rounded-xl hover:bg-white/8 border border-white/8 hover:border-white/15 transition-all"
+                  title="View Certificate"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </Link>
+              )}
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-gray-500 text-xs">
+              <Star className="w-3.5 h-3.5 text-amber-500/50" />
+              Certificate earned
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -102,32 +96,41 @@ export default function CertificatesPage() {
 
   return (
     <div className="space-y-6 animate-slide-up">
-      <div>
-        <h2 className="text-2xl font-bold text-white">Certificates</h2>
-        <p className="text-sm text-gray-400 mt-0.5">View and share your achievements</p>
+      {/* Header */}
+      <div className="page-hero">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-2xl font-bold text-white mb-1">Certificates</h1>
+            <p className="text-gray-400 text-sm">Your earned achievements and credentials</p>
+          </div>
+          {data.length > 0 && (
+            <div className="flex items-center gap-2 bg-amber-500/10 border border-amber-500/20 rounded-xl px-3 py-2">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span className="text-sm text-amber-300 font-medium">{data.length} earned</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {isLoading && <div className="flex justify-center py-12"><LoadingSpinner /></div>}
       {error && <ErrorMessage message="Failed to load certificates" onRetry={refetch} />}
 
       {!isLoading && !error && (
-        <div>
-          {data.length === 0 ? (
-            <div className="text-center py-12">
-              <Award className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">No certificates yet. Complete tests to earn certificates!</p>
+        data.length === 0 ? (
+          <div className="text-center py-16 glass-card">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+              <Award className="w-8 h-8 text-amber-400/50" />
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {data.map((cert: any, index: number) => (
-                <CertificateCard 
-                  key={cert.id || cert._id || `cert-${index}`} 
-                  cert={cert} 
-                />
-              ))}
-            </div>
-          )}
-        </div>
+            <p className="text-gray-400 font-medium">No certificates yet</p>
+            <p className="text-sm text-gray-600 mt-1">Complete tests and hackathons to earn certificates!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger">
+            {data.map((cert: any, index: number) => (
+              <CertificateCard key={cert.id || cert._id || `cert-${index}`} cert={cert} />
+            ))}
+          </div>
+        )
       )}
     </div>
   );
