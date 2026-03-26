@@ -18,14 +18,30 @@ const hackathonSchema = z.object({
 
 export const listHackathons = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const status = req.query.status as string;
+    let status = req.query.status as string | undefined;
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 10;
     const skip = (page - 1) * limit;
-    const where = status ? { status: status as any } : {};
+
+    let where: any = {};
+
+    // Only add status filter if provided and valid
+    if (status) {
+      // Normalize to uppercase
+      status = status.toUpperCase();
+      const validStatuses = ['ACTIVE', 'UPCOMING', 'COMPLETED'];
+      
+      if (validStatuses.includes(status)) {
+        where.status = status;
+      }
+      // If invalid status, just ignore it and return all
+    }
+
     const [hackathons, total] = await Promise.all([
       prisma.hackathon.findMany({
-        where, skip, take: limit,
+        where,
+        skip,
+        take: limit,
         include: {
           _count: { select: { participants: true, teams: true } },
         },
@@ -33,8 +49,20 @@ export const listHackathons = async (req: Request, res: Response, next: NextFunc
       }),
       prisma.hackathon.count({ where }),
     ]);
-    res.json({ success: true, data: { hackathons, total, page, totalPages: Math.ceil(total / limit) } });
-  } catch (err) { next(err); }
+
+    res.json({ 
+      success: true, 
+      data: { 
+        hackathons, 
+        total, 
+        page, 
+        totalPages: Math.ceil(total / limit) 
+      } 
+    });
+  } catch (err) {
+    console.error('❌ listHackathons error:', err);
+    next(err);
+  }
 };
 
 export const getHackathon = async (req: Request, res: Response, next: NextFunction) => {
@@ -49,7 +77,9 @@ export const getHackathon = async (req: Request, res: Response, next: NextFuncti
     });
     if (!hackathon) return res.status(404).json({ success: false, error: 'Hackathon not found' });
     res.json({ success: true, data: hackathon });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const createHackathon = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -59,11 +89,11 @@ export const createHackathon = async (req: AuthRequest, res: Response, next: Nex
       data: {
         title: data.title,
         description: data.description,
-        status: data.status,
+        status: data.status || 'UPCOMING',
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         image: data.image,
-        maxParticipants: data.maxParticipants,
+        maxParticipants: data.maxParticipants || 100,
         prizePool: data.prizePool,
       },
     });
@@ -92,7 +122,9 @@ export const deleteHackathon = async (req: AuthRequest, res: Response, next: Nex
   try {
     await prisma.hackathon.delete({ where: { id: req.params.id } });
     res.json({ success: true, data: { message: 'Hackathon deleted' } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const joinHackathon = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -102,7 +134,7 @@ export const joinHackathon = async (req: AuthRequest, res: Response, next: NextF
       include: { _count: { select: { participants: true } } },
     });
     if (!hackathon) return res.status(404).json({ success: false, error: 'Hackathon not found' });
-    if (hackathon._count.participants >= hackathon.maxParticipants) {
+    if (hackathon._count.participants >= (hackathon.maxParticipants || 100)) {
       return res.status(400).json({ success: false, error: 'Hackathon is full' });
     }
     const participant = await prisma.hackathonParticipant.create({
@@ -125,8 +157,15 @@ export const joinHackathon = async (req: AuthRequest, res: Response, next: NextF
 export const leaveHackathon = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     await prisma.hackathonParticipant.delete({
-      where: { userId_hackathonId: { userId: req.user!.id, hackathonId: req.params.id } },
+      where: {
+        userId_hackathonId: {
+          userId: req.user!.id,
+          hackathonId: req.params.id,
+        },
+      },
     });
     res.json({ success: true, data: { message: 'Left hackathon' } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };

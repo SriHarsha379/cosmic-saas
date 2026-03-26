@@ -20,9 +20,21 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const data = await authService.login(form);
-      login(data.token, data.user);
-      toast.success('Welcome back!');
-      router.push('/dashboard');
+
+      if (data && data.token) {
+        // Store token in localStorage
+        localStorage.setItem('token', data.token);
+
+        // Update Zustand store
+        login(data.token, data.user);
+
+        toast.success('Welcome back!');
+
+        // Redirect after a brief delay
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 500);
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Invalid credentials';
       const axiosErr = err as { response?: { data?: { message?: string } } };
@@ -80,7 +92,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-200"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -90,20 +102,15 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-60 disabled:cursor-not-allowed text-white rounded-xl px-6 py-3 font-medium transition-all duration-300 mt-2"
+              className="w-full mt-6 py-3 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-purple-500/30"
             >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Signing in...
-                </span>
-              ) : 'Sign In'}
+              {isLoading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
-          <p className="text-center text-sm text-gray-400 mt-6">
-            Don&apos;t have an account?{' '}
-            <Link href="/auth/signup" className="text-purple-400 hover:text-purple-300 font-medium transition-colors">
+          <p className="text-center text-gray-400 text-sm mt-6">
+            Don't have an account?{' '}
+            <Link href="/auth/signup" className="text-purple-400 hover:text-purple-300 font-semibold">
               Sign up
             </Link>
           </p>

@@ -1,17 +1,41 @@
+'use client';
+
 import type { Metadata } from 'next';
+import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
-import Providers from './providers';
+import Sidebar from '@/components/layout/Sidebar';
+import { Toaster } from 'sonner';
+import Providers from '@/providers';
+import { usePathname } from 'next/navigation';
 
-export const metadata: Metadata = {
-  title: 'Cosmic SaaS',
-  description: 'The ultimate platform for hackathons, interviews, tests, and jobs',
-};
+const geist = Geist({
+  variable: '--font-geist-sans',
+  subsets: ['latin'],
+});
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+const geistMono = Geist_Mono({
+  variable: '--font-geist-mono',
+  subsets: ['latin'],
+});
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const isAuthPage = pathname?.startsWith('/auth');
+
   return (
     <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
+      <body className={`${geist.variable} ${geistMono.variable} bg-[#0A0E27]`}>
+        <Providers>
+          {!isAuthPage && <Sidebar />}
+          <main className={isAuthPage ? '' : 'lg:ml-64 min-h-screen'}>
+            <div className={isAuthPage ? '' : 'p-6'}>{children}</div>
+          </main>
+          <Toaster position="top-right" theme="dark" />
+        </Providers>
       </body>
     </html>
   );

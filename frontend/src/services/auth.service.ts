@@ -21,12 +21,14 @@ export interface AuthResponse {
 export const authService = {
   login: async (payload: LoginPayload): Promise<AuthResponse> => {
     const res = await api.post('/auth/login', payload);
-    return res.data;
+    console.log('📥 Auth service response:', res.data);
+    // Backend returns { success: true, data: { token, user } }
+    return res.data.data;
   },
 
   signup: async (payload: SignupPayload): Promise<AuthResponse> => {
     const res = await api.post('/auth/signup', payload);
-    return res.data;
+    return res.data.data;
   },
 
   getMe: async (): Promise<User> => {

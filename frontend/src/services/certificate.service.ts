@@ -1,24 +1,37 @@
 import api from '@/lib/api';
-import type { Certificate } from '@/types';
 
 export const certificateService = {
-  getAll: async (): Promise<Certificate[]> => {
-    const res = await api.get('/certificates');
-    return res.data.data;
+  getAll: async (): Promise<any[]> => {
+    try {
+      const res = await api.get('/certificates');
+      return Array.isArray(res.data.data) ? res.data.data : [];
+    } catch (error) {
+      console.error('Error fetching certificates:', error);
+      return [];
+    }
   },
 
-  getById: async (id: string): Promise<Certificate> => {
+  getById: async (id: string): Promise<any> => {
     const res = await api.get(`/certificates/${id}`);
     return res.data.data;
   },
 
-  verify: async (code: string): Promise<Certificate> => {
-    const res = await api.get(`/certificates/verify/${code}`);
+  getUserCertificates: async (userId: string): Promise<any[]> => {
+    try {
+      const res = await api.get(`/certificates/user/${userId}`);
+      return Array.isArray(res.data.data) ? res.data.data : [];
+    } catch (error) {
+      console.error('Error fetching user certificates:', error);
+      return [];
+    }
+  },
+
+  issue: async (data: any): Promise<any> => {
+    const res = await api.post('/certificates', data);
     return res.data.data;
   },
 
-  download: async (id: string): Promise<Blob> => {
-    const res = await api.get(`/certificates/${id}/download`, { responseType: 'blob' });
-    return res.data;
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/certificates/${id}`);
   },
 };

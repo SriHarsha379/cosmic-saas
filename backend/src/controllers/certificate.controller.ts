@@ -11,10 +11,12 @@ export const listCertificates = async (req: AuthRequest, res: Response, next: Ne
     const certificates = await prisma.certificate.findMany({
       where: { userId },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
-      orderBy: { earnedAt: 'desc' },
+      orderBy: { issuedAt: 'desc' },
     });
     res.json({ success: true, data: certificates });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const getCertificate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -25,7 +27,9 @@ export const getCertificate = async (req: AuthRequest, res: Response, next: Next
     });
     if (!cert) return res.status(404).json({ success: false, error: 'Certificate not found' });
     res.json({ success: true, data: cert });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };
 
 export const issueCertificate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -33,12 +37,17 @@ export const issueCertificate = async (req: AuthRequest, res: Response, next: Ne
     const schema = z.object({
       userId: z.string(),
       title: z.string().min(1),
-      issuedBy: z.string().min(1),
+      issuedBy: z.string().optional(),
       certificateUrl: z.string().optional(),
     });
     const data = schema.parse(req.body);
     const cert = await prisma.certificate.create({
-      data: data as any,
+      data: {
+        userId: data.userId,
+        title: data.title,
+        issuedBy: data.issuedBy,
+        certificateUrl: data.certificateUrl,
+      },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
     await prisma.activity.create({
@@ -59,5 +68,7 @@ export const deleteCertificate = async (req: AuthRequest, res: Response, next: N
   try {
     await prisma.certificate.delete({ where: { id: req.params.id } });
     res.json({ success: true, data: { message: 'Certificate deleted' } });
-  } catch (err) { next(err); }
+  } catch (err) {
+    next(err);
+  }
 };

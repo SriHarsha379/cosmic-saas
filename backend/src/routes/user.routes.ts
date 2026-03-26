@@ -3,9 +3,9 @@ import { getProfile, updateProfile, listUsers, deleteUser } from '../controllers
 import { authenticate, requireAdmin } from '../middleware/auth';
 
 const router = Router();
-router.get('/', authenticate, requireAdmin, listUsers);
-router.get('/profile', authenticate, getProfile);
+router.get('/profile', authenticate, getProfile);           // ✅ Specific routes first
 router.put('/profile', authenticate, updateProfile);
+router.get('/', authenticate, requireAdmin, listUsers);    // ✅ General routes last
 router.get('/:id', authenticate, getProfile);
 router.delete('/:id', authenticate, requireAdmin, deleteUser);
 export default router;

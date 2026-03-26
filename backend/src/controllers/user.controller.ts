@@ -11,10 +11,9 @@ const updateProfileSchema = z.object({
   avatar: z.string().optional(),
   phone: z.string().optional(),
   bio: z.string().optional(),
-  skills: z.array(z.string()).optional(),
-  education: z.array(z.any()).optional(),
-  projects: z.array(z.any()).optional(),
-  resumeUrl: z.string().optional(),
+  skills: z.string().optional(),
+  experience: z.string().optional(),
+  education: z.string().optional(),
 });
 
 export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -24,9 +23,9 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
       where: { id: userId },
       select: {
         id: true, email: true, firstName: true, lastName: true,
-        role: true, isPro: true, avatar: true, createdAt: true,
-        profile: true, progress: true,
-        _count: { select: { certificates: true, activities: true, testResults: true } },
+        avatar: true, bio: true, phone: true, location: true,
+        skills: true, experience: true, education: true, createdAt: true,
+        _count: { select: { certificates: true, activities: true } },
       },
     });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
@@ -37,26 +36,13 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
 export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = updateProfileSchema.parse(req.body);
-    const { firstName, lastName, avatar, ...profileData } = data;
-
-    const profileCompletion = calculateCompletion({ ...profileData, firstName, lastName });
-
     const user = await prisma.user.update({
       where: { id: req.user!.id },
-      data: {
-        ...(firstName && { firstName }),
-        ...(lastName && { lastName }),
-        ...(avatar && { avatar }),
-        profile: {
-          upsert: {
-            create: { ...profileData, profileCompletion },
-            update: { ...profileData, profileCompletion },
-          },
-        },
-      },
+      data,
       select: {
         id: true, email: true, firstName: true, lastName: true,
-        role: true, isPro: true, avatar: true, profile: true,
+        avatar: true, bio: true, phone: true, location: true,
+        skills: true, experience: true, education: true,
       },
     });
     res.json({ success: true, data: user });
@@ -65,16 +51,6 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
     next(err);
   }
 };
-
-function calculateCompletion(data: any): number {
-  const fields = ['firstName', 'lastName', 'phone', 'bio', 'resumeUrl'];
-  const arrayFields = ['skills', 'education', 'projects'];
-  let filled = 0;
-  const total = fields.length + arrayFields.length;
-  fields.forEach(f => { if (data[f]) filled++; });
-  arrayFields.forEach(f => { if (data[f] && data[f].length > 0) filled++; });
-  return Math.round((filled / total) * 100);
-}
 
 export const listUsers = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -86,7 +62,7 @@ export const listUsers = async (req: AuthRequest, res: Response, next: NextFunct
         skip, take: limit,
         select: {
           id: true, email: true, firstName: true, lastName: true,
-          role: true, isPro: true, avatar: true, createdAt: true,
+          avatar: true, createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
       }),

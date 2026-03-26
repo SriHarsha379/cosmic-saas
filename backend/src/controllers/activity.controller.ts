@@ -16,7 +16,7 @@ export const listActivities = async (req: AuthRequest, res: Response, next: Next
     const [activities, total] = await Promise.all([
       prisma.activity.findMany({
         where,
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
         skip, take: limit,
       }),
       prisma.activity.count({ where }),

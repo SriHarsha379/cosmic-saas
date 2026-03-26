@@ -6,88 +6,129 @@ import {
   LayoutDashboard,
   Trophy,
   Users,
-  Video,
+  MessageSquare,
   Briefcase,
   FileText,
-  BookOpen,
-  BarChart3,
-  Award,
-  Star,
-  Wallet,
-  User,
-  Settings,
   Zap,
+  Wallet,
+  Award,
+  TrendingUp,
+  Settings,
+  LogOut,
+  Menu,
+  X,
 } from 'lucide-react';
-import { clsx } from 'clsx';
+import { useAuthStore } from '@/store/authStore';
+import { useState } from 'react';
 
-const navItems = [
-  { href: '/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { href: '/hackathons', label: 'Hackathons', icon: Trophy },
-  { href: '/teams', label: 'Teams', icon: Users },
-  { href: '/interviews', label: 'Interviews', icon: Video },
-  { href: '/jobs', label: 'Jobs', icon: Briefcase },
-  { href: '/applications', label: 'Applications', icon: FileText },
-  { href: '/tests', label: 'Tests', icon: BookOpen },
-  { href: '/reports', label: 'Reports', icon: BarChart3 },
-  { href: '/certificates', label: 'Certificates', icon: Award },
-  { href: '/leaderboard', label: 'Leaderboard', icon: Star },
-  { href: '/wallet', label: 'Wallet', icon: Wallet },
-  { href: '/profile', label: 'Profile', icon: User },
-  { href: '/settings', label: 'Settings', icon: Settings },
+const menuItems = [
+  { icon: LayoutDashboard, label: 'Overview', href: '/dashboard' },
+  { icon: Trophy, label: 'Hackathons', href: '/hackathons' },
+  { icon: Users, label: 'Teams', href: '/teams' },
+  { icon: MessageSquare, label: 'Interviews', href: '/interviews' },
+  { icon: Briefcase, label: 'Jobs', href: '/jobs' },
+  { icon: FileText, label: 'Applications', href: '/applications' },
+  { icon: Zap, label: 'Tests', href: '/tests' },
+  { icon: TrendingUp, label: 'Results', href: '/results' },
+  { icon: TrendingUp, label: 'Leaderboard', href: '/leaderboard' },
+  { icon: Wallet, label: 'Wallet', href: '/wallet' },
+  { icon: Award, label: 'Certificates', href: '/certificates' },
+  { icon: Settings, label: 'Settings', href: '/settings' },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, logout } = useAuthStore();
+  const [open, setOpen] = useState(true);
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[260px] bg-white/3 backdrop-blur-xl border-r border-white/10 flex flex-col z-30">
-      {/* Logo */}
-      <div className="px-6 py-6 border-b border-white/10">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center shadow-lg shadow-purple-500/30">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <span className="text-white font-bold text-lg leading-none">Cosmic</span>
-            <span className="block text-purple-400 text-xs font-medium">SaaS Platform</span>
-          </div>
-        </Link>
-      </div>
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        onClick={() => setOpen(!open)}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white/10 rounded-lg"
+      >
+        {open ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
 
-      {/* Nav */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        <ul className="space-y-1">
-          {navItems.map(({ href, label, icon: Icon }) => {
-            const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
+      {/* Sidebar */}
+      <aside
+        className={`fixed left-0 top-0 h-screen w-64 bg-[#0A0E27] border-r border-white/10 flex flex-col transition-transform duration-300 z-40 ${
+          open ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+        }`}
+      >
+        {/* Logo */}
+        <div className="p-6 border-b border-white/10">
+          <Link href="/dashboard" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center">
+              <Zap className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-white">Cosmic</h1>
+              <p className="text-xs text-gray-400">SaaS Platform</p>
+            </div>
+          </Link>
+        </div>
+
+        {/* User Profile */}
+        <div className="p-4 mx-4 mt-4 rounded-lg bg-white/5 border border-white/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-blue-600 flex items-center justify-center text-white font-bold">
+              {user?.firstName?.charAt(0).toUpperCase() || 'U'}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-white truncate">
+                {user?.firstName || 'User'} {user?.lastName || ''}
+              </p>
+              <p className="text-xs text-gray-400">Candidate</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 overflow-y-auto py-6 px-4 space-y-2">
+          {menuItems.map((item) => {
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + '/');
+            const Icon = item.icon;
+
             return (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className={clsx(
-                    'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200',
-                    isActive
-                      ? 'bg-gradient-to-r from-purple-600/30 to-blue-600/20 text-white border border-purple-500/30 shadow-sm shadow-purple-500/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  )}
-                >
-                  <Icon
-                    className={clsx('w-4 h-4 flex-shrink-0', isActive ? 'text-purple-400' : 'text-current')}
-                  />
-                  {label}
-                  {isActive && (
-                    <span className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-sm shadow-purple-400/50" />
-                  )}
-                </Link>
-              </li>
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setOpen(false)}
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  isActive
+                    ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white'
+                    : 'text-gray-400 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium">{item.label}</span>
+              </Link>
             );
           })}
-        </ul>
-      </nav>
+        </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <p className="text-xs text-gray-600 text-center">© 2024 Cosmic SaaS</p>
-      </div>
-    </aside>
+        {/* Footer */}
+        <div className="p-4 border-t border-white/10 space-y-2">
+          <button
+            onClick={() => {
+              logout();
+              setOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="text-sm font-medium">Logout</span>
+          </button>
+          <p className="text-xs text-gray-500 text-center py-2">© 2024 Cosmic SaaS</p>
+        </div>
+      </aside>
+
+      {/* Main Content Offset */}
+      <div className={`transition-all duration-300 ${open ? 'lg:ml-64' : ''}`} />
+    </>
   );
 }

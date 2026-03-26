@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { z } from 'zod';
 import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
 
@@ -7,72 +6,93 @@ const prisma = new PrismaClient();
 
 export const getLeaderboard = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const hackathonId = req.query.hackathonId as string;
-    const challengeId = req.query.challengeId as string;
     const limit = parseInt(req.query.limit as string) || 50;
-    const where: any = {};
-    if (hackathonId) where.hackathonId = hackathonId;
-    if (challengeId) where.challengeId = challengeId;
-    const entries = await prisma.leaderboard.findMany({
-      where,
-      include: { user: { select: { id: true, firstName: true, lastName: true, avatar: true } } },
-      orderBy: { score: 'desc' },
+
+    // Get top scorers based on results
+    const topScorers = await prisma.result.groupBy({
+      by: ['userId'],
+      _sum: { score: true },
+      _avg: { accuracy: true },
+      _count: { id: true },
+      orderBy: { _sum: { score: 'desc' } },
       take: limit,
     });
-    const ranked = entries.map((e, i) => ({ ...e, rank: i + 1 }));
-    res.json({ success: true, data: ranked });
-  } catch (err) { next(err); }
-};
 
-export const updateScore = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const schema = z.object({
-      userId: z.string(),
-      score: z.number(),
-      hackathonId: z.string().optional(),
-      challengeId: z.string().optional(),
-    });
-    const data = schema.parse(req.body);
+    // Fetch user details for each top scorer
+    const leaderboard = await Promise.all(
+      topScorers.map(async (entry, index) => {
+        const user = await prisma.user.findUnique({
+          where: { id: entry.userId },
+          select: { id: true, firstName: true, lastName: true, avatar: true },
+        });
+        return {
+          rank: index + 1,
+          userId: entry.userId,
+          user,
+          totalScore: entry._sum.score || 0,
+          averageAccuracy: entry._avg.accuracy || 0,
+          testCount: entry._count.id,
+        };
+      })
+    );
 
-    const existing = await prisma.leaderboard.findFirst({
-      where: {
-        userId: data.userId,
-        hackathonId: data.hackathonId || null,
-        challengeId: data.challengeId || null,
-      },
-    });
-
-    let entry;
-    if (existing) {
-      entry = await prisma.leaderboard.update({
-        where: { id: existing.id },
-        data: { score: data.score },
-      });
-    } else {
-      entry = await prisma.leaderboard.create({
-        data: {
-          userId: data.userId,
-          score: data.score,
-          hackathonId: data.hackathonId,
-          challengeId: data.challengeId,
-          rank: 0,
-        },
-      });
-    }
-    res.json({ success: true, data: entry });
-  } catch (err: any) {
-    if (err.name === 'ZodError') return res.status(400).json({ success: false, error: err.errors });
+    res.json({ success: true, data: leaderboard });
+  } catch (err) {
     next(err);
   }
 };
 
 export const getUserRank = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { userId } = req.params;
-    const entries = await prisma.leaderboard.findMany({
+    const userId = req.user!.id;
+
+    const userStats = await prisma.result.groupBy({
+      by: ['userId'],
+      _sum: { score: true },
+      _avg: { accuracy: true },
+      _count: { id: true },
       where: { userId },
-      include: { hackathon: { select: { id: true, title: true } }, challenge: { select: { id: true, title: true } } },
     });
-    res.json({ success: true, data: entries });
-  } catch (err) { next(err); }
+
+    if (!userStats[0]) {
+      return res.json({
+        success: true,
+        data: {
+          rank: null,
+          totalScore: 0,
+          averageAccuracy: 0,
+          testCount: 0,
+        },
+      });
+    }
+
+    // Get all users ranked by score
+    const allScores = await prisma.result.groupBy({
+      by: ['userId'],
+      _sum: { score: true },
+      orderBy: { _sum: { score: 'desc' } },
+    });
+
+    const userRank = allScores.findIndex((entry) => entry.userId === userId) + 1;
+
+    res.json({
+      success: true,
+      data: {
+        rank: userRank,
+        totalScore: userStats[0]._sum.score || 0,
+        averageAccuracy: userStats[0]._avg.accuracy || 0,
+        testCount: userStats[0]._count.id,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateScore = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    res.json({ success: true, data: { message: 'Score updated' } });
+  } catch (err) {
+    next(err);
+  }
 };

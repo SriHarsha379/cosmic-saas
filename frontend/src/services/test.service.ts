@@ -1,29 +1,43 @@
 import api from '@/lib/api';
-import type { Test, TestResult, AnswerEntry } from '@/types';
 
 export const testService = {
-  getAll: async (): Promise<Test[]> => {
-    const res = await api.get('/tests');
-    return res.data.data;
+  getAll: async (params?: any): Promise<any[]> => {
+    try {
+      const res = await api.get('/tests', { params });
+      return Array.isArray(res.data.data) ? res.data.data : [];
+    } catch (error) {
+      console.error('Error fetching tests:', error);
+      return [];
+    }
   },
 
-  getById: async (id: string): Promise<Test> => {
+  getById: async (id: string): Promise<any> => {
     const res = await api.get(`/tests/${id}`);
     return res.data.data;
   },
 
-  submit: async (testId: string, answers: AnswerEntry[], timeTaken: number): Promise<TestResult> => {
-    const res = await api.post(`/tests/${testId}/submit`, { answers, timeTaken });
+  startTest: async (id: string): Promise<any> => {
+    const res = await api.post(`/tests/${id}/start`, {});
     return res.data.data;
   },
 
-  getResults: async (): Promise<TestResult[]> => {
-    const res = await api.get('/tests/results');
+  submitTest: async (id: string, answers: any): Promise<any> => {
+    const res = await api.post(`/tests/${id}/submit`, { answers });
     return res.data.data;
   },
 
-  getResultById: async (resultId: string): Promise<TestResult> => {
-    const res = await api.get(`/tests/results/${resultId}`);
+  getResults: async (): Promise<any[]> => {
+    try {
+      const res = await api.get('/results');
+      return Array.isArray(res.data.data) ? res.data.data : [];
+    } catch (error) {
+      console.error('Error fetching results:', error);
+      return [];
+    }
+  },
+
+  getResultById: async (id: string): Promise<any> => {
+    const res = await api.get(`/results/${id}`);
     return res.data.data;
   },
 };

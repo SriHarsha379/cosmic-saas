@@ -11,8 +11,7 @@ const signupSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   firstName: z.string().min(1),
-  lastName: z.string().min(1),
-  role: z.enum(['USER', 'ADMIN', 'COMPANY']).optional(),
+  lastName: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -20,9 +19,9 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
-const generateToken = (user: { id: string; email: string; role: string }) => {
+const generateToken = (user: { id: string; email: string }) => {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role },
+    { id: user.id, email: user.email },
     process.env.JWT_SECRET || 'fallback-secret',
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
   );
@@ -41,15 +40,12 @@ export const signup = async (req: Request, res: Response, next: NextFunction) =>
         email: data.email,
         password: hashedPassword,
         firstName: data.firstName,
-        lastName: data.lastName,
-        role: data.role || 'USER',
-        profile: { create: {} },
+        lastName: data.lastName || '',
         wallet: { create: { balance: 0 } },
-        progress: { create: {} },
       },
-      select: { id: true, email: true, firstName: true, lastName: true, role: true, isPro: true, createdAt: true },
+      select: { id: true, email: true, firstName: true, lastName: true, createdAt: true },
     });
-    const token = generateToken({ id: user.id, email: user.email, role: user.role });
+    const token = generateToken({ id: user.id, email: user.email });
     res.status(201).json({ success: true, data: { user, token } });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ success: false, error: err.errors });
@@ -64,7 +60,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     if (!user) return res.status(401).json({ success: false, error: 'Invalid credentials' });
     const valid = await bcrypt.compare(data.password, user.password);
     if (!valid) return res.status(401).json({ success: false, error: 'Invalid credentials' });
-    const token = generateToken({ id: user.id, email: user.email, role: user.role });
+    const token = generateToken({ id: user.id, email: user.email });
     const { password: _, ...userWithoutPassword } = user;
     res.json({ success: true, data: { user: userWithoutPassword, token } });
   } catch (err: any) {
@@ -78,9 +74,10 @@ export const me = async (req: AuthRequest, res: Response, next: NextFunction) =>
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
       select: {
-        id: true, email: true, firstName: true, lastName: true, role: true,
-        isPro: true, avatar: true, createdAt: true,
-        profile: true, wallet: true, progress: true,
+        id: true, email: true, firstName: true, lastName: true,
+        avatar: true, bio: true, phone: true, location: true,
+        skills: true, experience: true, education: true,
+        createdAt: true,
       },
     });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });

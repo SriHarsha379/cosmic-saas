@@ -7,158 +7,38 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum Role {
-  USER
-  ADMIN
-  COMPANY
-}
-
-enum HackathonStatus {
-  ACTIVE
-  UPCOMING
-  COMPLETED
-}
-
-enum TeamMemberRole {
-  MEMBER
-  LEADER
-}
-
-enum JoinRequestStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
-enum InterviewStatus {
-  SCHEDULED
-  IN_PROGRESS
-  COMPLETED
-}
-
-enum ProctorLevel {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum ApplicationStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-}
-
-enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
-}
-
-enum QuestionType {
-  MCQ
-  CODING
-  ESSAY
-  TRUE_FALSE
-}
-
-enum TestResultStatus {
-  IN_PROGRESS
-  COMPLETED
-  ABANDONED
-}
-
-enum TransactionType {
-  CREDIT
-  DEBIT
-}
-
-enum ActivityType {
-  JOINED_HACKATHON
-  CREATED_TEAM
-  COMPLETED_TEST
-  WON_CHALLENGE
-  APPLIED_JOB
-  JOINED_INTERVIEW
-  EARNED_CERTIFICATE
-}
-
-enum BotType {
-  CODING
-  APTITUDE
-}
-
 model User {
-  id             String   @id @default(cuid())
-  email          String   @unique
-  password       String
-  firstName      String
-  lastName       String
-  role           Role     @default(USER)
-  isPro          Boolean  @default(false)
-  avatar         String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  profile              Profile?
-  hackathonParticipants HackathonParticipant[]
-  teamMembers           TeamMember[]
-  joinRequests          JoinRequest[]
-  interviews            Interview[]
-  applications          Application[]
-  testResults           TestResult[]
-  wallet                Wallet?
-  transactions          Transaction[]
-  certificates          Certificate[]
-  activities            Activity[]
-  chatHistories         ChatHistory[]
-  leaderboardEntries    Leaderboard[]
-  progress              Progress?
-  teamsCreated          Team[]           @relation("TeamCreator")
-  testsCreated          Test[]           @relation("TestCreator")
-}
-
-model Profile {
   id                String   @id @default(cuid())
-  userId            String   @unique
-  phone             String?
+  firstName         String
+  lastName          String?
+  email             String   @unique
+  password          String
+  avatar            String?
   bio               String?
-  skills            Json     @default("[]")
-  education         Json     @default("[]")
-  projects          Json     @default("[]")
-  resumeUrl         String?
-  profileCompletion Int      @default(0)
+  phone             String?
+  location          String?
+  skills            String?
+  experience        String?
+  education         String?
+  createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  teamsCreated      Team[]               @relation("TeamCreator")
+  teamMemberships   TeamMember[]
+  teamMessages      TeamMessage[]
+  hackathonJoined   HackathonParticipant[]
+  hackathonsCreated Hackathon[]
+  interviews        Interview[]
+  jobs              Job[]
+  applications      Application[]
+  testAttempts      TestAttempt[]
+  results           Result[]
+  certificates      Certificate[]
+  wallet            Wallet?
+  activities        Activity[]
+  chatHistories     ChatHistory[]
 
-model Hackathon {
-  id              String          @id @default(cuid())
-  title           String
-  description     String
-  status          HackathonStatus @default(UPCOMING)
-  startDate       DateTime
-  endDate         DateTime
-  image           String?
-  maxParticipants Int             @default(100)
-  prizePool       String?
-  createdAt       DateTime        @default(now())
-
-  participants  HackathonParticipant[]
-  teams         Team[]
-  leaderboards  Leaderboard[]
-}
-
-model HackathonParticipant {
-  id           String   @id @default(cuid())
-  userId       String
-  hackathonId  String
-  joinedAt     DateTime @default(now())
-
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hackathon Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, hackathonId])
+  @@index([email])
 }
 
 model Team {
@@ -171,217 +51,232 @@ model Team {
   updatedAt   DateTime @updatedAt
 
   hackathon   Hackathon?   @relation(fields: [hackathonId], references: [id])
-  creator     User         @relation("TeamCreator", fields: [createdBy], references: [id])
+  creator     User         @relation("TeamCreator", fields: [createdBy], references: [id], onDelete: Cascade)
   members     TeamMember[]
-  joinRequests JoinRequest[]
+  messages    TeamMessage[]
+
+  @@index([createdBy])
+  @@index([hackathonId])
 }
 
 model TeamMember {
-  id       String         @id @default(cuid())
+  id       String   @id @default(cuid())
   teamId   String
   userId   String
-  role     TeamMemberRole @default(MEMBER)
-  joinedAt DateTime       @default(now())
+  role     String   @default("MEMBER")
+  joinedAt DateTime @default(now())
 
   team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
 }
 
-model JoinRequest {
-  id          String            @id @default(cuid())
-  teamId      String
+model TeamMessage {
+  id        String   @id @default(cuid())
+  teamId    String
+  userId    String
+  message   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([teamId])
+  @@index([userId])
+}
+
+model Hackathon {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  image       String?
+  startDate   DateTime?
+  endDate     DateTime?
+  prizePool   String?
+  status      String   @default("UPCOMING")
+  createdBy   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator     User                      @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  teams       Team[]
+  participants HackathonParticipant[]
+
+  @@index([createdBy])
+  @@index([status])
+}
+
+model HackathonParticipant {
+  id          String   @id @default(cuid())
+  hackathonId String
   userId      String
-  status      JoinRequestStatus @default(PENDING)
-  requestedAt DateTime          @default(now())
-  respondedAt DateTime?
+  joinedAt    DateTime @default(now())
 
-  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([teamId, userId])
+  @@unique([hackathonId, userId])
+  @@index([hackathonId])
+  @@index([userId])
 }
 
 model Interview {
-  id           String          @id @default(cuid())
-  userId       String
-  link         String          @unique @default(cuid())
-  status       InterviewStatus @default(SCHEDULED)
-  startTime    DateTime?
-  endTime      DateTime?
-  proctorLevel ProctorLevel    @default(MEDIUM)
-  recordingUrl String?
-  createdAt    DateTime        @default(now())
+  id          String   @id @default(cuid())
+  userId      String
+  type        String
+  duration    Int?
+  feedback    String?
+  score       Float?
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Job {
-  id              String   @id @default(cuid())
-  title           String
-  company         String
-  description     String
-  skills          Json     @default("[]")
-  location        String
-  experienceLevel String
-  salaryMin       Int?
-  salaryMax       Int?
-  isRemote        Boolean  @default(false)
-  postedAt        DateTime @default(now())
-  expiresAt       DateTime?
+  id          String   @id @default(cuid())
+  title       String
+  company     String
+  description String?
+  location    String?
+  salary      String?
+  postedBy    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  postedByUser User          @relation(fields: [postedBy], references: [id], onDelete: Cascade)
   applications Application[]
+
+  @@index([postedBy])
 }
 
 model Application {
-  id          String            @id @default(cuid())
-  userId      String
-  jobId       String
-  status      ApplicationStatus @default(PENDING)
-  coverLetter String?
-  appliedAt   DateTime          @default(now())
-  respondedAt DateTime?
+  id        String   @id @default(cuid())
+  jobId     String
+  userId    String
+  status    String   @default("PENDING")
+  appliedAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  job  Job  @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  job       Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, jobId])
+  @@unique([jobId, userId])
+  @@index([jobId])
+  @@index([userId])
 }
 
 model Test {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  totalScore  Int        @default(100)
-  duration    Int        @default(60)
-  difficulty  Difficulty @default(MEDIUM)
-  createdBy   String
-  createdAt   DateTime   @default(now())
+  id              String   @id @default(cuid())
+  title           String
+  description     String?
+  duration        Int?
+  totalQuestions  Int?
+  difficulty      String   @default("MEDIUM")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  creator    User           @relation("TestCreator", fields: [createdBy], references: [id])
-  questions  TestQuestion[]
-  results    TestResult[]
+  attempts        TestAttempt[]
+  results         Result[]
+
+  @@index([difficulty])
 }
 
-model TestQuestion {
-  id            String       @id @default(cuid())
-  testId        String
-  question      String
-  type          QuestionType @default(MCQ)
-  options       Json         @default("[]")
-  correctAnswer String?
-  score         Int          @default(10)
-  order         Int          @default(0)
+model TestAttempt {
+  id        String   @id @default(cuid())
+  testId    String
+  userId    String
+  startedAt DateTime @default(now())
+  endedAt   DateTime?
+  status    String   @default("IN_PROGRESS")
 
-  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
+  test      Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([testId, userId])
+  @@index([testId])
+  @@index([userId])
 }
 
-model TestResult {
-  id              String           @id @default(cuid())
-  userId          String
-  testId          String
-  answers         Json             @default("[]")
-  score           Int              @default(0)
-  accuracy        Float            @default(0)
-  duration        Int              @default(0)
-  status          TestResultStatus @default(IN_PROGRESS)
-  attemptNumber   Int              @default(1)
-  plagiarismScore Float            @default(0)
-  completedAt     DateTime?
-  createdAt       DateTime         @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  test Test @relation(fields: [testId], references: [id], onDelete: Cascade)
-}
-
-model Wallet {
+model Result {
   id          String   @id @default(cuid())
-  userId      String   @unique
-  balance     Float    @default(0)
-  currency    String   @default("USD")
-  lastUpdated DateTime @updatedAt
+  testId      String
+  userId      String
+  score       Int
+  totalScore  Int?
+  accuracy    Float?
+  duration    Int?
+  status      String   @default("COMPLETED")
+  completedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  test        Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model Transaction {
-  id             String          @id @default(cuid())
-  userId         String
-  type           TransactionType
-  amount         Float
-  description    String
-  balanceBefore  Float
-  balanceAfter   Float
-  timestamp      DateTime        @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([testId])
+  @@index([userId])
 }
 
 model Certificate {
-  id             String   @id @default(cuid())
-  userId         String
-  title          String
-  earnedAt       DateTime @default(now())
-  issuedBy       String
-  certificateUrl String?
+  id              String   @id @default(cuid())
+  userId          String
+  title           String
+  issuedBy        String?
+  certificateId   String?
+  certificateUrl  String?
+  description     String?
+  issuedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  balance   Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Activity {
-  id          String       @id @default(cuid())
+  id          String   @id @default(cuid())
   userId      String
-  type        ActivityType
-  description String
-  timestamp   DateTime     @default(now())
+  type        String
+  description String?
+  createdAt   DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model ChatHistory {
-  id             String   @id @default(cuid())
-  userId         String
-  botType        BotType  @default(CODING)
-  messages       Json     @default("[]")
-  lastMessageAt  DateTime @default(now())
-  conversationId String   @default(cuid())
+  id              String   @id @default(cuid())
+  userId          String
+  conversationId  String   @default(cuid())
+  botType         String   @default("CODING")
+  messagesData    String   @default("[]")
+  lastMessageAt   DateTime @default(now())
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-model CompanyChallenge {
-  id        String   @id @default(cuid())
-  title     String
-  company   String
-  testId    String?
-  createdAt DateTime @default(now())
-
-  leaderboards Leaderboard[]
-}
-
-model Leaderboard {
-  id          String   @id @default(cuid())
-  userId      String
-  hackathonId String?
-  challengeId String?
-  score       Int      @default(0)
-  rank        Int      @default(0)
-  lastUpdated DateTime @updatedAt
-
-  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  hackathon Hackathon?        @relation(fields: [hackathonId], references: [id])
-  challenge CompanyChallenge? @relation(fields: [challengeId], references: [id])
-}
-
-model Progress {
-  id            String   @id @default(cuid())
-  userId        String   @unique
-  totalTests    Int      @default(0)
-  testsPassed   Int      @default(0)
-  totalScore    Int      @default(0)
-  averageScore  Float    @default(0)
-  lastUpdatedAt DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([conversationId])
 }
