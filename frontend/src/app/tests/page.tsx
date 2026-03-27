@@ -72,7 +72,7 @@ function TestCard({ test }: { test: any }) {
         </span>
         <span className="flex items-center gap-1.5">
           <HelpCircle className="w-3.5 h-3.5 text-purple-400/70" />
-          {test.totalQuestions || 0} questions
+          {test._count?.questions ?? test.totalQuestions ?? 0} questions
         </span>
       </div>
 

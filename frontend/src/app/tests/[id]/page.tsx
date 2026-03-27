@@ -175,7 +175,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
           <p className="text-gray-400 mb-6">{test.description}</p>
           <div className="grid grid-cols-3 gap-4 mb-8">
             <div className="bg-white/5 rounded-lg p-4">
-              <p className="text-2xl font-bold text-purple-400">{test.questions?.length || 0}</p>
+              <p className="text-2xl font-bold text-purple-400">{test.questions?.length || test.totalQuestions || 0}</p>
               <p className="text-sm text-gray-400">Questions</p>
             </div>
             <div className="bg-white/5 rounded-lg p-4">

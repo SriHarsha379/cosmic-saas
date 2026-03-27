@@ -29,6 +29,9 @@ export const listTests = async (req: Request, res: Response, next: NextFunction)
     const tests = await prisma.test.findMany({
       where,
       orderBy: { createdAt: 'desc' },
+      include: {
+        _count: { select: { questions: true } },
+      },
     });
     res.json({ success: true, data: tests });
   } catch (err) {
