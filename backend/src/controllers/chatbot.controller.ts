@@ -14,6 +14,8 @@ const sendMessageSchema = z.object({
   content: z.string().min(1),
 });
 
+const ROLE = { USER: 'USER', ASSISTANT: 'ASSISTANT' } as const;
+
 function getStubResponse(content: string, type: string): string {
   const codeResponses = [
     `I can help you with that coding problem. Let me analyze it: the key here is to consider the time complexity. Using a hash map would reduce this from O(n²) to O(n).`,
@@ -61,12 +63,12 @@ export const sendChatbotMessage = async (req: AuthRequest, res: Response, next: 
     if (!chatbot) return res.status(404).json({ success: false, error: 'Chatbot session not found' });
 
     const userMessage = await prisma.chatMessage.create({
-      data: { chatbotId: id, role: 'USER', content: data.content },
+      data: { chatbotId: id, role: ROLE.USER, content: data.content },
     });
 
     const aiContent = getStubResponse(data.content, chatbot.type);
     const assistantMessage = await prisma.chatMessage.create({
-      data: { chatbotId: id, role: 'ASSISTANT', content: aiContent },
+      data: { chatbotId: id, role: ROLE.ASSISTANT, content: aiContent },
     });
 
     res.json({ success: true, data: { userMessage, assistantMessage } });
