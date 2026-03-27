@@ -6,6 +6,7 @@ import {
   LayoutDashboard, BookOpen, Link2, Briefcase, FileText,
   ClipboardList, Wallet, User, Settings, LogOut,
   ChevronRight, ArrowLeft, Zap, Menu, X, Target,
+  MessageSquare, Video, FileCheck, TrendingUp,
 } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useState } from 'react';
@@ -52,6 +53,34 @@ const aiHiringMenuItems = [
     label: 'Self-Evaluations',
     href: '/ai-hiring/self-evaluations',
     desc: 'AI assessments',
+    exact: false,
+  },
+  {
+    icon: MessageSquare,
+    label: 'AI Chatbot',
+    href: '/ai-hiring/chatbot',
+    desc: 'Code & aptitude help',
+    exact: false,
+  },
+  {
+    icon: Video,
+    label: 'Mock Interviews',
+    href: '/ai-hiring/mock-interviews',
+    desc: 'AI simulations',
+    exact: false,
+  },
+  {
+    icon: FileCheck,
+    label: 'Versant Tests',
+    href: '/ai-hiring/versant-tests',
+    desc: 'English proficiency',
+    exact: false,
+  },
+  {
+    icon: TrendingUp,
+    label: 'Progress',
+    href: '/results',
+    desc: 'Stats & history',
     exact: false,
   },
   {

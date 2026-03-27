@@ -29,11 +29,11 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
     const assistantMessage = { role: 'assistant', content: botResponse, timestamp: new Date() };
 
     if (chatHistory) {
-      const messages = chatHistory.messages as any[];
+      const messages = JSON.parse(chatHistory.messagesData);
       chatHistory = await prisma.chatHistory.update({
         where: { id: chatHistory.id },
         data: {
-          messages: [...messages, userMessage, assistantMessage],
+          messagesData: JSON.stringify([...messages, userMessage, assistantMessage]),
           lastMessageAt: new Date(),
         },
       });
@@ -42,7 +42,7 @@ export const sendMessage = async (req: AuthRequest, res: Response, next: NextFun
         data: {
           userId: req.user!.id,
           botType,
-          messages: [userMessage, assistantMessage],
+          messagesData: JSON.stringify([userMessage, assistantMessage]),
           lastMessageAt: new Date(),
         },
       });
