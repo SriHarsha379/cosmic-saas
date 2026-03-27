@@ -147,7 +147,7 @@ export const getEvaluationResults = async (req: AuthRequest, res: Response, next
       data: {
         ...evaluation,
         questions: JSON.parse(evaluation.questions),
-        answers: JSON.parse(evaluation.answers),
+        answers: evaluation.answers ? JSON.parse(evaluation.answers) : [],
       },
     });
   } catch (err) {
