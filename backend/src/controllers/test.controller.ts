@@ -79,6 +79,37 @@ export const deleteTest = async (req: AuthRequest, res: Response, next: NextFunc
   }
 };
 
+export const startTest = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const test = await prisma.test.findUnique({ where: { id: req.params.id } });
+    if (!test) return res.status(404).json({ success: false, error: 'Test not found' });
+
+    const existing = await prisma.testAttempt.findUnique({
+      where: { testId_userId: { testId: req.params.id, userId: req.user!.id } },
+    });
+
+    if (existing) {
+      if (existing.status === 'COMPLETED') {
+        return res.status(400).json({ success: false, error: 'Test already completed' });
+      }
+      return res.json({ success: true, data: existing });
+    }
+
+    const attempt = await prisma.testAttempt.create({
+      data: {
+        testId: req.params.id,
+        userId: req.user!.id,
+        status: 'IN_PROGRESS',
+      },
+    });
+
+    res.status(201).json({ success: true, data: attempt });
+  } catch (err) {
+    console.error('❌ Start test error:', err);
+    next(err);
+  }
+};
+
 export const submitTest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { score, accuracy, duration } = req.body;
