@@ -184,10 +184,28 @@ model Test {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  questions       Question[]
   attempts        TestAttempt[]
   results         Result[]
 
   @@index([difficulty])
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  testId        String
+  question      String
+  type          String   @default("MCQ")
+  options       Json?
+  correctAnswer String?
+  marks         Int      @default(1)
+  explanation   String?
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+
+  test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+
+  @@index([testId])
 }
 
 model TestAttempt {
