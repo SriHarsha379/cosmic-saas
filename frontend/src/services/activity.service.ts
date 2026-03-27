@@ -3,12 +3,27 @@ import type { Activity } from '@/types';
 
 export const activityService = {
   getAll: async (limit = 20): Promise<Activity[]> => {
-    const res = await api.get('/activities', { params: { limit } });
-    return res.data.data;
+    try {
+      const res = await api.get('/activities', { params: { limit } });
+      // Backend returns { success, data: { activities, total, page, totalPages } }
+      const data = res.data.data;
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.activities)) return data.activities;
+      return [];
+    } catch {
+      return [];
+    }
   },
 
   getRecent: async (): Promise<Activity[]> => {
-    const res = await api.get('/activities/recent');
-    return res.data.data;
+    try {
+      const res = await api.get('/activities/recent');
+      const data = res.data.data;
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data?.activities)) return data.activities;
+      return [];
+    } catch {
+      return [];
+    }
   },
 };
