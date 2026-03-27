@@ -11,6 +11,15 @@ const testSchema = z.object({
   difficulty: z.enum(['EASY', 'MEDIUM', 'HARD']).optional(),
   duration: z.number().min(1).optional(),
   totalQuestions: z.number().optional(),
+  questions: z.array(z.object({
+    question: z.string().min(1),
+    type: z.enum(['MCQ', 'TRUE_FALSE', 'ESSAY', 'CODING']).default('MCQ'),
+    options: z.array(z.string()).optional(),
+    correctAnswer: z.string().optional(),
+    marks: z.number().default(1),
+    explanation: z.string().optional(),
+    order: z.number().default(0),
+  })).optional(),
 });
 
 export const listTests = async (req: Request, res: Response, next: NextFunction) => {
@@ -32,6 +41,7 @@ export const getTest = async (req: Request, res: Response, next: NextFunction) =
     const test = await prisma.test.findUnique({
       where: { id: req.params.id },
       include: {
+        questions: { orderBy: { order: 'asc' } },
         attempts: { select: { id: true, userId: true, status: true } },
         results: { select: { id: true, userId: true, score: true, accuracy: true } },
       },
@@ -46,8 +56,29 @@ export const getTest = async (req: Request, res: Response, next: NextFunction) =
 export const createTest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = testSchema.parse(req.body);
+    const { questions, ...testData } = data;
     const test = await prisma.test.create({
-      data,
+      data: {
+        title: testData.title as string,
+        description: testData.description,
+        difficulty: testData.difficulty,
+        duration: testData.duration,
+        totalQuestions: testData.totalQuestions ?? questions?.length,
+        questions: questions?.length
+          ? {
+              create: questions.map((q, i) => ({
+                question: q.question,
+                type: q.type,
+                options: q.options ?? undefined,
+                correctAnswer: q.correctAnswer,
+                marks: q.marks,
+                explanation: q.explanation,
+                order: q.order ?? i,
+              })),
+            }
+          : undefined,
+      },
+      include: { questions: { orderBy: { order: 'asc' } } },
     });
     res.status(201).json({ success: true, data: test });
   } catch (err: any) {
@@ -59,9 +90,37 @@ export const createTest = async (req: AuthRequest, res: Response, next: NextFunc
 export const updateTest = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const data = testSchema.partial().parse(req.body);
-    const test = await prisma.test.update({
-      where: { id: req.params.id },
-      data,
+    const { questions, ...testData } = data;
+    const test = await prisma.$transaction(async (tx) => {
+      await tx.test.update({
+        where: { id: req.params.id },
+        data: {
+          ...testData,
+          totalQuestions: testData.totalQuestions ?? (questions !== undefined ? questions.length : undefined),
+        },
+      });
+      if (questions !== undefined) {
+        await tx.question.deleteMany({ where: { testId: req.params.id } });
+        const validQuestions = questions.filter((q): q is typeof q & { question: string } => !!q.question);
+        if (validQuestions.length > 0) {
+          await tx.question.createMany({
+            data: validQuestions.map((q, i) => ({
+              testId: req.params.id,
+              question: q.question,
+              type: q.type ?? 'MCQ',
+              options: q.options ?? undefined,
+              correctAnswer: q.correctAnswer,
+              marks: q.marks ?? 1,
+              explanation: q.explanation,
+              order: q.order ?? i,
+            })),
+          });
+        }
+      }
+      return tx.test.findUnique({
+        where: { id: req.params.id },
+        include: { questions: { orderBy: { order: 'asc' } } },
+      });
     });
     res.json({ success: true, data: test });
   } catch (err: any) {

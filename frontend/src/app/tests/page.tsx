@@ -23,7 +23,7 @@ function TestCard({ test }: { test: any }) {
     mutationFn: () => testService.startTest(test.id),
     onSuccess: () => {
       toast.success('Test started!');
-      router.push(`/tests/${test.id}/attempt`);
+      router.push(`/tests/${test.id}`);
     },
     onError: () => toast.error('Failed to start test'),
   });

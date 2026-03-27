@@ -131,7 +131,155 @@ async function main() {
 
   console.log('✅ Tests created');
 
-  // Create jobs
+  // Create questions for tests
+  const jsQuestions = [
+    {
+      question: 'What is the output of `typeof null` in JavaScript?',
+      type: 'MCQ',
+      options: ['null', 'undefined', 'object', 'string'],
+      correctAnswer: 'object',
+      marks: 1,
+      explanation: '`typeof null` returns "object" — a well-known quirk of JavaScript.',
+      order: 0,
+    },
+    {
+      question: 'Which keyword declares a block-scoped variable in JavaScript?',
+      type: 'MCQ',
+      options: ['var', 'let', 'function', 'const'],
+      correctAnswer: 'let',
+      marks: 1,
+      explanation: '`let` and `const` are block-scoped; `var` is function-scoped.',
+      order: 1,
+    },
+    {
+      question: 'JavaScript is a dynamically typed language.',
+      type: 'TRUE_FALSE',
+      correctAnswer: 'true',
+      marks: 1,
+      explanation: 'JavaScript determines types at runtime, making it dynamically typed.',
+      order: 2,
+    },
+    {
+      question: 'What does the `===` operator check?',
+      type: 'MCQ',
+      options: ['Value only', 'Type only', 'Value and type', 'Reference equality'],
+      correctAnswer: 'Value and type',
+      marks: 1,
+      explanation: '`===` is the strict equality operator — it checks both value and type.',
+      order: 3,
+    },
+    {
+      question: 'Write a JavaScript function that returns the sum of two numbers.',
+      type: 'CODING',
+      marks: 5,
+      explanation: 'Expected: function sum(a, b) { return a + b; }',
+      order: 4,
+    },
+  ];
+
+  await prisma.question.createMany({
+    data: jsQuestions.map((q) => ({ testId: test1.id, ...q, options: q.options ?? undefined })),
+  });
+
+  const tsQuestions = [
+    {
+      question: 'What is a TypeScript interface?',
+      type: 'MCQ',
+      options: ['A runtime type check', 'A compile-time structural contract', 'A JavaScript class', 'A function type'],
+      correctAnswer: 'A compile-time structural contract',
+      marks: 2,
+      explanation: 'Interfaces define the shape of an object at compile time only.',
+      order: 0,
+    },
+    {
+      question: 'TypeScript code is executed directly by the browser without any compilation.',
+      type: 'TRUE_FALSE',
+      correctAnswer: 'false',
+      marks: 1,
+      explanation: 'TypeScript must be compiled (transpiled) to JavaScript before running in the browser.',
+      order: 1,
+    },
+    {
+      question: 'Which TypeScript utility type makes all properties optional?',
+      type: 'MCQ',
+      options: ['Required<T>', 'Partial<T>', 'Readonly<T>', 'Pick<T, K>'],
+      correctAnswer: 'Partial<T>',
+      marks: 2,
+      explanation: '`Partial<T>` constructs a type with all properties of T set to optional.',
+      order: 2,
+    },
+    {
+      question: 'What keyword is used to declare a generic type parameter in TypeScript?',
+      type: 'MCQ',
+      options: ['<T>', 'generic', 'type', 'extends'],
+      correctAnswer: '<T>',
+      marks: 2,
+      explanation: 'Generic type parameters are declared with angle brackets, e.g., function identity<T>(arg: T): T.',
+      order: 3,
+    },
+    {
+      question: 'Write a TypeScript generic function that returns the first element of an array.',
+      type: 'CODING',
+      marks: 5,
+      explanation: 'Expected: function first<T>(arr: T[]): T | undefined { return arr[0]; }',
+      order: 4,
+    },
+  ];
+
+  await prisma.question.createMany({
+    data: tsQuestions.map((q) => ({ testId: test2.id, ...q, options: q.options ?? undefined })),
+  });
+
+  const reactQuestions = [
+    {
+      question: 'Which hook is used to manage local state in a React functional component?',
+      type: 'MCQ',
+      options: ['useEffect', 'useContext', 'useState', 'useReducer'],
+      correctAnswer: 'useState',
+      marks: 1,
+      explanation: '`useState` returns a state variable and a setter function.',
+      order: 0,
+    },
+    {
+      question: 'React components must always return a single root element.',
+      type: 'TRUE_FALSE',
+      correctAnswer: 'true',
+      marks: 1,
+      explanation: 'A React component must return a single root element (or a Fragment).',
+      order: 1,
+    },
+    {
+      question: 'What does the `key` prop help React with in lists?',
+      type: 'MCQ',
+      options: ['Styling list items', 'Uniquely identifying elements for efficient re-rendering', 'Sorting the list', 'Filtering items'],
+      correctAnswer: 'Uniquely identifying elements for efficient re-rendering',
+      marks: 2,
+      explanation: 'The `key` prop helps React identify which items have changed, been added, or removed.',
+      order: 2,
+    },
+    {
+      question: 'Which React hook runs a side effect after every render by default?',
+      type: 'MCQ',
+      options: ['useState', 'useMemo', 'useCallback', 'useEffect'],
+      correctAnswer: 'useEffect',
+      marks: 2,
+      explanation: '`useEffect` with no dependency array runs after every render.',
+      order: 3,
+    },
+    {
+      question: 'Explain the difference between controlled and uncontrolled components in React.',
+      type: 'ESSAY',
+      marks: 5,
+      explanation: 'Controlled: form data is handled by React state. Uncontrolled: form data is handled by the DOM.',
+      order: 4,
+    },
+  ];
+
+  await prisma.question.createMany({
+    data: reactQuestions.map((q) => ({ testId: test3.id, ...q, options: q.options ?? undefined })),
+  });
+
+  console.log('✅ Questions created');
   const job1 = await prisma.job.create({
     data: {
       title: 'Senior React Developer',
