@@ -13,8 +13,7 @@ const hackathonSchema = z.object({
   endDate: z.string(),
   image: z.string().optional(),
   maxParticipants: z.number().optional(),
-  prizePool: z.string().optional(),
-});
+  prizePool: z.string().optional(),});
 
 export const listHackathons = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -93,8 +92,8 @@ export const createHackathon = async (req: AuthRequest, res: Response, next: Nex
         startDate: new Date(data.startDate),
         endDate: new Date(data.endDate),
         image: data.image,
-        maxParticipants: data.maxParticipants || 100,
         prizePool: data.prizePool,
+        createdBy: req.user!.id,
       },
     });
     res.status(201).json({ success: true, data: hackathon });

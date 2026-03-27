@@ -7,9 +7,24 @@ const prisma = new PrismaClient();
 
 export const listCertificates = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.userId || req.user!.id;
+    const isAdmin = req.user!.role === 'ADMIN';
+    const targetUserId = req.params.userId;
+    // Admins can view all certificates or filter by userId; normal users see only their own
+    const where = isAdmin && !targetUserId ? {} : { userId: targetUserId || req.user!.id };
     const certificates = await prisma.certificate.findMany({
-      where: { userId },
+      where,
+      include: { user: { select: { id: true, firstName: true, lastName: true } } },
+      orderBy: { issuedAt: 'desc' },
+    });
+    res.json({ success: true, data: certificates });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listAllCertificates = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const certificates = await prisma.certificate.findMany({
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { issuedAt: 'desc' },
     });
