@@ -128,7 +128,7 @@ export default function TestTakingPage({ params }: { params: Promise<{ id: strin
 
   const submitMutation = useMutation({
     mutationFn: (data: { answers: AnswerEntry[]; timeTaken: number }) =>
-      testService.submit(id!, data.answers, data.timeTaken),
+      testService.submitTest(id!, data.answers),
     onSuccess: (result: any) => {
       qc.invalidateQueries({ queryKey: ['tests'] });
       const score = result.accuracy?.toFixed(1) || result.score || 0;

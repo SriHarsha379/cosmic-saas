@@ -23,7 +23,7 @@ export const getProfile = async (req: AuthRequest, res: Response, next: NextFunc
       where: { id: userId },
       select: {
         id: true, email: true, firstName: true, lastName: true,
-        avatar: true, bio: true, phone: true, location: true,
+        role: true, avatar: true, bio: true, phone: true, location: true,
         skills: true, experience: true, education: true, createdAt: true,
         _count: { select: { certificates: true, activities: true } },
       },
@@ -62,7 +62,7 @@ export const listUsers = async (req: AuthRequest, res: Response, next: NextFunct
         skip, take: limit,
         select: {
           id: true, email: true, firstName: true, lastName: true,
-          avatar: true, createdAt: true,
+          role: true, avatar: true, createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
       }),

@@ -1,9 +1,10 @@
 export interface User {
   _id: string;
+  id?: string;
   firstName: string;
   lastName: string;
   email: string;
-  role: 'user' | 'admin' | 'recruiter';
+  role: 'USER' | 'ADMIN' | 'RECRUITER';
   avatar?: string;
   createdAt: string;
   updatedAt: string;

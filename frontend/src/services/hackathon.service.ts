@@ -59,4 +59,13 @@ export const hackathonService = {
     const res = await api.post('/hackathons', data);
     return res.data.data;
   },
+
+  update: async (id: string, data: Partial<Hackathon>): Promise<Hackathon> => {
+    const res = await api.put(`/hackathons/${id}`, data);
+    return res.data.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/hackathons/${id}`);
+  },
 };

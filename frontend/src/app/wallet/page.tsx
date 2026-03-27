@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, X } from 'lucide-react';
+import { Wallet, Plus, ArrowUpRight, ArrowDownLeft, X, TrendingUp, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { walletService } from '@/services/wallet.service';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -27,27 +27,30 @@ function AddFundsModal({ onClose }: { onClose: () => void }) {
   const presets = [10, 25, 50, 100];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-[#0E1330] border border-white/10 rounded-2xl p-6 w-full max-w-md">
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal-box">
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-semibold text-white">Add Funds</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white">
+          <div>
+            <h2 className="text-lg font-bold text-white">Add Funds</h2>
+            <p className="text-xs text-gray-500 mt-0.5">Top up your wallet balance</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-white/8 rounded-lg text-gray-400 hover:text-white transition-all">
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <div className="space-y-4">
           <div>
-            <label className="block text-sm text-gray-300 mb-2">Quick amounts</label>
+            <label className="block text-xs font-medium text-gray-400 mb-2">Quick amounts</label>
             <div className="grid grid-cols-4 gap-2">
               {presets.map((p) => (
                 <button
                   key={p}
                   onClick={() => setAmount(String(p))}
-                  className={`py-2 rounded-xl border text-sm font-medium transition-all ${
+                  className={`py-2 rounded-xl border text-sm font-semibold transition-all ${
                     amount === String(p)
-                      ? 'bg-purple-600/20 border-purple-500/50 text-purple-300'
-                      : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/8'
+                      ? 'bg-purple-600/20 border-purple-500/50 text-purple-300 shadow-lg shadow-purple-500/10'
+                      : 'bg-white/4 border-white/10 text-gray-400 hover:bg-white/8 hover:text-white'
                   }`}
                 >
                   ${p}
@@ -57,40 +60,42 @@ function AddFundsModal({ onClose }: { onClose: () => void }) {
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1.5">Custom amount</label>
+            <label className="block text-xs font-medium text-gray-400 mb-2">Custom amount</label>
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
               <input
                 type="number"
                 min={1}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="w-full bg-white/5 border border-white/10 rounded-xl pl-7 pr-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-sm"
+                className="cosmic-input pl-8"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1.5">Description (optional)</label>
+            <label className="block text-xs font-medium text-gray-400 mb-2">Note (optional)</label>
             <input
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Top up"
-              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white placeholder-gray-500 focus:outline-none focus:border-purple-500/50 text-sm"
+              placeholder="e.g. Monthly top-up"
+              className="cosmic-input"
             />
           </div>
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-sm">Cancel</button>
+          <button onClick={onClose} className="flex-1 px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-xl text-sm transition-all">
+            Cancel
+          </button>
           <button
             onClick={() => mutation.mutate()}
             disabled={mutation.isPending || !amount || Number(amount) <= 0}
-            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-xl px-4 py-2.5 text-sm font-medium disabled:opacity-50"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-40 transition-all"
           >
-            {mutation.isPending ? 'Processing...' : 'Add Funds'}
+            {mutation.isPending ? 'Processing…' : 'Add Funds'}
           </button>
         </div>
       </div>
@@ -106,13 +111,19 @@ export default function WalletPage() {
     queryFn: walletService.get,
   });
 
+  const txCredit = wallet?.transactions?.filter((t: Transaction) => t.type === 'credit') || [];
+  const txDebit  = wallet?.transactions?.filter((t: Transaction) => t.type === 'debit')  || [];
+  const totalIn  = txCredit.reduce((s: number, t: Transaction) => s + t.amount, 0);
+  const totalOut = txDebit.reduce((s:  number, t: Transaction) => s + t.amount, 0);
+
   return (
     <div className="space-y-6 animate-slide-up">
       {showAddFunds && <AddFundsModal onClose={() => setShowAddFunds(false)} />}
 
+      {/* Header */}
       <div>
-        <h2 className="text-xl font-bold text-white">Wallet</h2>
-        <p className="text-sm text-gray-400 mt-0.5">Manage your funds and transactions</p>
+        <h1 className="text-2xl font-bold text-white mb-1">Wallet</h1>
+        <p className="text-sm text-gray-400">Manage your funds and transaction history</p>
       </div>
 
       {isLoading && <div className="flex justify-center py-12"><LoadingSpinner size="lg" /></div>}
@@ -120,65 +131,95 @@ export default function WalletPage() {
 
       {wallet && (
         <>
-          {/* Balance Card */}
-          <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/10 border border-purple-500/20 rounded-2xl p-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-400 mb-2">Total Balance</p>
-                <p className="text-4xl font-bold text-white">
+          {/* Balance + mini stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {/* Main balance */}
+            <div className="sm:col-span-2 glass-card p-6 bg-gradient-to-br from-purple-600/15 to-blue-600/8 border-purple-500/20 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-48 h-48 rounded-full bg-purple-600/10 -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+              <div className="relative z-10">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-8 h-8 rounded-lg bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+                    <Wallet className="w-4 h-4 text-purple-400" />
+                  </div>
+                  <p className="text-sm text-gray-400">Total Balance</p>
+                </div>
+                <p className="text-4xl font-bold text-white mt-3 tabular-nums">
                   ${wallet.balance.toFixed(2)}
-                  <span className="text-lg text-gray-400 ml-2 font-normal">{wallet.currency}</span>
+                  <span className="text-base text-gray-500 font-normal ml-2">{wallet.currency || 'USD'}</span>
                 </p>
-              </div>
-              <div className="p-4 bg-purple-500/20 border border-purple-500/30 rounded-2xl">
-                <Wallet className="w-8 h-8 text-purple-400" />
+                <button
+                  onClick={() => setShowAddFunds(true)}
+                  className="mt-4 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-all hover:shadow-lg hover:shadow-purple-500/25"
+                >
+                  <Plus className="w-4 h-4" /> Add Funds
+                </button>
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddFunds(true)}
-              className="mt-6 flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300"
-            >
-              <Plus className="w-4 h-4" /> Add Funds
-            </button>
+            {/* In / Out */}
+            <div className="flex flex-col gap-3">
+              <div className="flex-1 glass-card p-4 border-emerald-500/15">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
+                  <p className="text-xs text-gray-500">Money In</p>
+                </div>
+                <p className="text-lg font-bold text-emerald-400 tabular-nums">+${totalIn.toFixed(2)}</p>
+              </div>
+              <div className="flex-1 glass-card p-4 border-red-500/15">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-7 h-7 rounded-lg bg-red-500/15 flex items-center justify-center">
+                    <TrendingDown className="w-3.5 h-3.5 text-red-400" />
+                  </div>
+                  <p className="text-xs text-gray-500">Money Out</p>
+                </div>
+                <p className="text-lg font-bold text-red-400 tabular-nums">-${totalOut.toFixed(2)}</p>
+              </div>
+            </div>
           </div>
 
           {/* Transactions */}
-          <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/10">
-              <h3 className="text-base font-semibold text-white">Transaction History</h3>
+          <div className="glass-card overflow-hidden">
+            <div className="px-5 py-4 border-b border-white/8 flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-white">Transaction History</h3>
+              {wallet.transactions?.length > 0 && (
+                <span className="text-xs text-gray-500 bg-white/5 px-2 py-0.5 rounded-full">
+                  {wallet.transactions.length} transactions
+                </span>
+              )}
             </div>
+
             {!wallet.transactions || wallet.transactions.length === 0 ? (
               <div className="text-center py-12">
-                <p className="text-gray-400">No transactions yet</p>
+                <p className="text-gray-500">No transactions yet</p>
               </div>
             ) : (
               <div className="divide-y divide-white/5">
                 {wallet.transactions.map((tx: Transaction) => (
-                  <div key={tx._id} className="flex items-center gap-4 px-6 py-4 hover:bg-white/3 transition-colors">
-                    <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                  <div key={tx._id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-white/3 transition-colors">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${
                       tx.type === 'credit'
-                        ? 'bg-emerald-500/10 border border-emerald-500/20'
-                        : 'bg-red-500/10 border border-red-500/20'
+                        ? 'bg-emerald-500/12 border border-emerald-500/20'
+                        : 'bg-red-500/12 border border-red-500/20'
                     }`}>
                       {tx.type === 'credit'
                         ? <ArrowDownLeft className="w-4 h-4 text-emerald-400" />
-                        : <ArrowUpRight className="w-4 h-4 text-red-400" />
-                      }
+                        : <ArrowUpRight className="w-4 h-4 text-red-400" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white">{tx.description}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">{new Date(tx.createdAt).toLocaleDateString()}</p>
+                      <p className="text-sm text-white font-medium truncate">{tx.description}</p>
+                      <p className="text-xs text-gray-600 mt-0.5">
+                        {new Date(tx.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className={`text-sm font-semibold ${tx.type === 'credit' ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <p className={`text-sm font-bold tabular-nums ${tx.type === 'credit' ? 'text-emerald-400' : 'text-red-400'}`}>
                         {tx.type === 'credit' ? '+' : '-'}${tx.amount.toFixed(2)}
                       </p>
                       <span className={`text-xs capitalize ${
-                        tx.status === 'completed' ? 'text-gray-400' : tx.status === 'pending' ? 'text-amber-400' : 'text-red-400'
-                      }`}>
-                        {tx.status}
-                      </span>
+                        tx.status === 'completed' ? 'text-gray-500' : tx.status === 'pending' ? 'text-amber-400' : 'text-red-400'
+                      }`}>{tx.status}</span>
                     </div>
                   </div>
                 ))}

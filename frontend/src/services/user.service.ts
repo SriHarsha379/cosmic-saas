@@ -19,7 +19,8 @@ export const userService = {
   listUsers: async (params?: any): Promise<any[]> => {
     try {
       const res = await api.get('/users', { params });
-      return Array.isArray(res.data.data) ? res.data.data : [];
+      const data = res.data.data;
+      return Array.isArray(data) ? data : Array.isArray(data?.users) ? data.users : [];
     } catch (error) {
       console.error('Error fetching users:', error);
       return [];
