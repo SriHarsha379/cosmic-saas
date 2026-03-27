@@ -5,6 +5,7 @@ import {
   createTest, 
   updateTest, 
   deleteTest, 
+  startTest,
   submitTest, 
   getTestResults,
   getTestResult 
@@ -21,6 +22,7 @@ router.get('/:id', getTest);
 router.post('/', authenticate, requireAdmin, createTest);
 router.put('/:id', authenticate, requireAdmin, updateTest);
 router.delete('/:id', authenticate, requireAdmin, deleteTest);
+router.post('/:id/start', authenticate, startTest);
 router.post('/:id/submit', authenticate, submitTest);
 
 // Results routes
