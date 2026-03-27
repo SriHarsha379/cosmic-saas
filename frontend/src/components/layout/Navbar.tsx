@@ -8,21 +8,23 @@ import { toast } from 'sonner';
 
 function getPageTitle(pathname: string): string {
   const map: Record<string, string> = {
-    '/dashboard':     'Overview',
-    '/hackathons':    'Hackathons',
-    '/teams':         'Teams',
-    '/interviews':    'Interviews',
-    '/jobs':          'Jobs',
-    '/applications':  'Applications',
-    '/tests':         'Tests',
-    '/reports':       'Reports',
-    '/certificates':  'Certificates',
-    '/leaderboard':   'Leaderboard',
-    '/wallet':        'Wallet',
-    '/profile':       'Profile',
-    '/settings':      'Settings',
-    '/results':       'Results',
-    '/admin':         'Admin',
+    '/dashboard':                    'Overview',
+    '/hackathons':                   'Hackathons',
+    '/teams':                        'Teams',
+    '/interviews':                   'Interviews',
+    '/jobs':                         'Jobs',
+    '/applications':                 'Applications',
+    '/tests':                        'Tests',
+    '/reports':                      'Reports',
+    '/certificates':                 'Certificates',
+    '/leaderboard':                  'Leaderboard',
+    '/wallet':                       'Wallet',
+    '/profile':                      'Profile',
+    '/settings':                     'Settings',
+    '/results':                      'Results',
+    '/admin':                        'Admin',
+    '/ai-hiring/self-evaluations':   'Self-Evaluations',
+    '/ai-hiring':                    'AI Hiring',
   };
   for (const [key, value] of Object.entries(map)) {
     if (pathname.startsWith(key)) return value;

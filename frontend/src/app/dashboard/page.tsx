@@ -95,11 +95,11 @@ const ecosystemPlatforms: EcoPlatform[] = [
     href: '/hackathons',
   },
   {
-    label: 'Jobs',
-    description: 'Find your next opportunity',
+    label: 'AI Hiring',
+    description: 'Jobs, interviews & applications',
     icon: Briefcase,
-    gradient: 'from-emerald-500 to-cyan-600',
-    href: '/jobs',
+    gradient: 'from-blue-500 to-purple-600',
+    href: '/ai-hiring',
   },
   {
     label: 'Leaderboard',
