@@ -18,6 +18,11 @@ import walletRoutes from './routes/wallet.routes';
 import certificateRoutes from './routes/certificate.routes';
 import leaderboardRoutes from './routes/leaderboard.routes';
 import activityRoutes from './routes/activity.routes';
+import chatbotRoutes from './routes/chatbot.routes';
+import mockInterviewRoutes from './routes/mock-interview.routes';
+import selfEvaluationRoutes from './routes/self-evaluation.routes';
+import versantTestRoutes from './routes/versant-test.routes';
+import progressRoutes from './routes/progress.routes';
 
 const app = express();
 
@@ -43,6 +48,11 @@ app.use('/api/wallet', walletRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/activities', activityRoutes);
+app.use('/api/chatbot', chatbotRoutes);
+app.use('/api/mock-interviews', mockInterviewRoutes);
+app.use('/api/self-evaluations', selfEvaluationRoutes);
+app.use('/api/versant-tests', versantTestRoutes);
+app.use('/api/progress', progressRoutes);
 
 app.use(errorHandler);
 

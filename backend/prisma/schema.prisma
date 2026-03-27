@@ -38,6 +38,11 @@ model User {
   wallet            Wallet?
   activities        Activity[]
   chatHistories     ChatHistory[]
+  aiChatbots        AIChatbot[]
+  mockInterviews    MockInterview[]
+  selfEvaluations   SelfEvaluation[]
+  versantTests      VersantTest[]
+  progressMetrics   ProgressMetric[]
 
   @@index([email])
 }
@@ -298,4 +303,99 @@ model ChatHistory {
 
   @@index([userId])
   @@index([conversationId])
+}
+model AIChatbot {
+  id        String        @id @default(cuid())
+  userId    String
+  type      String        @default("CODE")
+  title     String        @default("New Chat")
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages  ChatMessage[]
+
+  @@index([userId])
+}
+
+model ChatMessage {
+  id         String    @id @default(cuid())
+  chatbotId  String
+  role       String    @default("USER")
+  content    String
+  timestamp  DateTime  @default(now())
+  feedback   String?
+
+  chatbot    AIChatbot @relation(fields: [chatbotId], references: [id], onDelete: Cascade)
+
+  @@index([chatbotId])
+}
+
+model MockInterview {
+  id          String    @id @default(cuid())
+  userId      String
+  jobRole     String
+  difficulty  String    @default("MEDIUM")
+  status      String    @default("PENDING")
+  startedAt   DateTime?
+  completedAt DateTime?
+  duration    Int?
+  score       Float?
+  feedback    String?
+  videoUrl    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([jobRole])
+}
+
+model SelfEvaluation {
+  id          String    @id @default(cuid())
+  userId      String
+  jobRole     String
+  mode        String    @default("ASSESSMENT")
+  questions   String    @default("[]")
+  answers     String    @default("[]")
+  feedback    String?
+  score       Float?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VersantTest {
+  id               String    @id @default(cuid())
+  userId           String
+  testType         String
+  duration         Int?
+  score            Float?
+  proficiencyLevel String?
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([testType])
+}
+
+model ProgressMetric {
+  id        String   @id @default(cuid())
+  userId    String
+  metric    String
+  value     Float    @default(0)
+  updatedAt DateTime @updatedAt
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, metric])
+  @@index([userId])
 }
