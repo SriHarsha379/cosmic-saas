@@ -1,9 +1,7 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const updateProfileSchema = z.object({
   firstName: z.string().optional(),
@@ -16,17 +14,30 @@ const updateProfileSchema = z.object({
   education: z.string().optional(),
 });
 
+// Public fields visible to anyone
+const publicSelect = {
+  id: true, firstName: true, lastName: true,
+  avatar: true, bio: true, skills: true, createdAt: true,
+  _count: { select: { certificates: true } },
+};
+
+// Private fields only visible to self or admin
+const privateSelect = {
+  id: true, email: true, firstName: true, lastName: true,
+  role: true, avatar: true, bio: true, phone: true, location: true,
+  skills: true, experience: true, education: true, createdAt: true,
+  _count: { select: { certificates: true, activities: true } },
+};
+
 export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.id || req.user!.id;
+    const targetId = req.params.id || req.user!.id;
+    const isSelf = targetId === req.user!.id;
+    const isAdmin = req.user!.role === 'ADMIN';
+
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true, email: true, firstName: true, lastName: true,
-        role: true, avatar: true, bio: true, phone: true, location: true,
-        skills: true, experience: true, education: true, createdAt: true,
-        _count: { select: { certificates: true, activities: true } },
-      },
+      where: { id: targetId },
+      select: (isSelf || isAdmin) ? privateSelect : publicSelect,
     });
     if (!user) return res.status(404).json({ success: false, error: 'User not found' });
     res.json({ success: true, data: user });
@@ -60,10 +71,7 @@ export const listUsers = async (req: AuthRequest, res: Response, next: NextFunct
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         skip, take: limit,
-        select: {
-          id: true, email: true, firstName: true, lastName: true,
-          role: true, avatar: true, createdAt: true,
-        },
+        select: { id: true, email: true, firstName: true, lastName: true, role: true, avatar: true, createdAt: true },
         orderBy: { createdAt: 'desc' },
       }),
       prisma.user.count(),
@@ -74,6 +82,9 @@ export const listUsers = async (req: AuthRequest, res: Response, next: NextFunct
 
 export const deleteUser = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    if (req.params.id === req.user!.id) {
+      return res.status(400).json({ success: false, error: 'Cannot delete your own account' });
+    }
     await prisma.user.delete({ where: { id: req.params.id } });
     res.json({ success: true, data: { message: 'User deleted' } });
   } catch (err) { next(err); }

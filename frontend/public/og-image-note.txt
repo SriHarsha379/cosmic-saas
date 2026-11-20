@@ -1,0 +1,2 @@
+Replace /public/og-image.png with a 1200x630px branded image for social sharing.
+You can create one free at: https://www.canva.com or https://og-playground.vercel.app

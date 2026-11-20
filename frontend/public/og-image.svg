@@ -1,0 +1,44 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0A0E27"/>
+      <stop offset="100%" style="stop-color:#1a1040"/>
+    </linearGradient>
+    <linearGradient id="text-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#a855f7"/>
+      <stop offset="100%" style="stop-color:#06b6d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- Grid lines -->
+  <line x1="0" y1="210" x2="1200" y2="210" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="0" y1="420" x2="1200" y2="420" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="400" y1="0" x2="400" y2="630" stroke="#ffffff08" stroke-width="1"/>
+  <line x1="800" y1="0" x2="800" y2="630" stroke="#ffffff08" stroke-width="1"/>
+
+  <!-- Glow circles -->
+  <circle cx="200" cy="150" r="200" fill="#a855f7" opacity="0.08"/>
+  <circle cx="1000" cy="480" r="250" fill="#06b6d4" opacity="0.08"/>
+
+  <!-- Logo emoji + name -->
+  <text x="600" y="220" font-family="system-ui, sans-serif" font-size="72" text-anchor="middle" fill="white" font-weight="bold">🚀 Cosmic SaaS</text>
+
+  <!-- Gradient headline -->
+  <text x="600" y="320" font-family="system-ui, sans-serif" font-size="48" text-anchor="middle" font-weight="bold">
+    <tspan fill="url(#text-grad)">Run Hackathons. Hire Smarter. Test Better.</tspan>
+  </text>
+
+  <!-- Subtext -->
+  <text x="600" y="390" font-family="system-ui, sans-serif" font-size="28" text-anchor="middle" fill="#94a3b8">
+    All-in-one platform for institutions
+  </text>
+
+  <!-- Stats bar -->
+  <rect x="200" y="460" width="800" height="80" rx="16" fill="#ffffff08" stroke="#ffffff15" stroke-width="1"/>
+  <text x="360" y="510" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" fill="#a855f7" font-weight="bold">10,000+ Students</text>
+  <text x="600" y="510" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" fill="#06b6d4" font-weight="bold">500+ Hackathons</text>
+  <text x="840" y="510" font-family="system-ui, sans-serif" font-size="22" text-anchor="middle" fill="#a855f7" font-weight="bold">50+ Institutions</text>
+</svg>

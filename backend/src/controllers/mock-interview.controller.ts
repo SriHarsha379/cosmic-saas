@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const JOB_ROLES = [
   { id: 'SALES', name: 'Sales', description: 'Client acquisition, negotiation, and closing deals' },

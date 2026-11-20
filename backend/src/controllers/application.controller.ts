@@ -1,13 +1,10 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const applySchema = z.object({
   jobId: z.string(),
-  coverLetter: z.string().optional(),
 });
 
 export const applyToJob = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -16,7 +13,7 @@ export const applyToJob = async (req: AuthRequest, res: Response, next: NextFunc
     const job = await prisma.job.findUnique({ where: { id: data.jobId } });
     if (!job) return res.status(404).json({ success: false, error: 'Job not found' });
     const application = await prisma.application.create({
-      data: { userId: req.user!.id, jobId: data.jobId, coverLetter: data.coverLetter },
+      data: { userId: req.user!.id, jobId: data.jobId },
       include: { job: true },
     });
     await prisma.activity.create({
@@ -52,6 +49,9 @@ export const getApplication = async (req: AuthRequest, res: Response, next: Next
       include: { job: true, user: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!application) return res.status(404).json({ success: false, error: 'Application not found' });
+    if (application.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
     res.json({ success: true, data: application });
   } catch (err) { next(err); }
 };
@@ -64,7 +64,7 @@ export const updateApplicationStatus = async (req: AuthRequest, res: Response, n
     }
     const application = await prisma.application.update({
       where: { id: req.params.id },
-      data: { status, respondedAt: new Date() },
+      data: { status },
     });
     res.json({ success: true, data: application });
   } catch (err) { next(err); }

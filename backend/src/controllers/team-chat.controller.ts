@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const messageSchema = z.object({
   teamId: z.string(),
@@ -14,8 +12,6 @@ export const sendTeamMessage = async (req: AuthRequest, res: Response, next: Nex
   try {
     const { teamId, message } = messageSchema.parse(req.body);
     const userId = req.user!.id;
-
-    console.log('📤 Sending message:', { teamId, userId, message });
 
     // Check if user is team owner or member
     const team = await prisma.team.findUnique({
@@ -28,10 +24,9 @@ export const sendTeamMessage = async (req: AuthRequest, res: Response, next: Nex
     }
 
     // Allow if user is owner or member
-    const isMember = team.leaderId === userId || team.members.length > 0;
+    const isMember = team.createdBy === userId || team.members.length > 0;
 
     if (!isMember) {
-      console.log('❌ User not a member:', { userId, leaderId: team.leaderId, memberCount: team.members.length });
       return res.status(403).json({ success: false, error: 'Not a team member' });
     }
 
@@ -47,8 +42,6 @@ export const sendTeamMessage = async (req: AuthRequest, res: Response, next: Nex
       },
     });
 
-    console.log('✅ Message created:', msg);
-
     res.json({ success: true, data: msg });
   } catch (err: any) {
     console.error('❌ sendTeamMessage error:', err);
@@ -62,8 +55,6 @@ export const getTeamMessages = async (req: AuthRequest, res: Response, next: Nex
     const { teamId } = req.params;
     const userId = req.user!.id;
 
-    console.log('📨 Fetching messages for:', { teamId, userId });
-
     // Check if user is team owner or member
     const team = await prisma.team.findUnique({
       where: { id: teamId },
@@ -75,10 +66,9 @@ export const getTeamMessages = async (req: AuthRequest, res: Response, next: Nex
     }
 
     // Allow if user is owner or member
-    const isMember = team.leaderId === userId || team.members.length > 0;
+    const isMember = team.createdBy === userId || team.members.length > 0;
 
     if (!isMember) {
-      console.log('❌ User not authorized:', { userId, leaderId: team.leaderId, memberCount: team.members.length });
       return res.status(403).json({ success: false, error: 'Not a team member' });
     }
 
@@ -91,8 +81,6 @@ export const getTeamMessages = async (req: AuthRequest, res: Response, next: Nex
       orderBy: { createdAt: 'asc' },
       take: 100,
     });
-
-    console.log('✅ Messages fetched:', { count: messages.length });
 
     // Format messages
     const formattedMessages = messages.map((msg) => ({

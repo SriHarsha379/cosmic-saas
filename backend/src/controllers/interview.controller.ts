@@ -1,12 +1,11 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
 
-const prisma = new PrismaClient();
-
 const createInterviewSchema = z.object({
-  proctorLevel: z.enum(['LOW', 'MEDIUM', 'HIGH']).optional(),
+  type: z.string().default('MOCK'),
+  duration: z.number().optional(),
 });
 
 export const listInterviews = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -28,6 +27,9 @@ export const getInterview = async (req: AuthRequest, res: Response, next: NextFu
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!interview) return res.status(404).json({ success: false, error: 'Interview not found' });
+    if (interview.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
     res.json({ success: true, data: interview });
   } catch (err) { next(err); }
 };
@@ -36,7 +38,7 @@ export const createInterview = async (req: AuthRequest, res: Response, next: Nex
   try {
     const data = createInterviewSchema.parse(req.body);
     const interview = await prisma.interview.create({
-      data: { userId: req.user!.id, ...data },
+      data: { userId: req.user!.id, type: data.type, duration: data.duration },
     });
     await prisma.activity.create({
       data: { userId: req.user!.id, type: 'JOINED_INTERVIEW', description: 'Started an interview session' },
@@ -51,30 +53,21 @@ export const createInterview = async (req: AuthRequest, res: Response, next: Nex
 export const updateInterview = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const schema = z.object({
-      status: z.enum(['SCHEDULED', 'IN_PROGRESS', 'COMPLETED']).optional(),
-      startTime: z.string().optional(),
-      endTime: z.string().optional(),
-      recordingUrl: z.string().optional(),
+      status: z.enum(['PENDING', 'IN_PROGRESS', 'COMPLETED']).optional(),
+      feedback: z.string().optional(),
+      score: z.number().optional(),
+      duration: z.number().optional(),
     });
     const data = schema.parse(req.body);
-    const updateData: any = { ...data };
-    if (data.startTime) updateData.startTime = new Date(data.startTime);
-    if (data.endTime) updateData.endTime = new Date(data.endTime);
-    const interview = await prisma.interview.update({ where: { id: req.params.id }, data: updateData });
-    res.json({ success: true, data: interview });
+    const interview = await prisma.interview.findUnique({ where: { id: req.params.id } });
+    if (!interview) return res.status(404).json({ success: false, error: 'Interview not found' });
+    if (interview.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
+    const updated = await prisma.interview.update({ where: { id: req.params.id }, data });
+    res.json({ success: true, data: updated });
   } catch (err: any) {
     if (err.name === 'ZodError') return res.status(400).json({ success: false, error: err.errors });
     next(err);
   }
-};
-
-export const getInterviewByLink = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    const interview = await prisma.interview.findUnique({
-      where: { link: req.params.link },
-      include: { user: { select: { id: true, firstName: true, lastName: true } } },
-    });
-    if (!interview) return res.status(404).json({ success: false, error: 'Interview not found' });
-    res.json({ success: true, data: interview });
-  } catch (err) { next(err); }
 };

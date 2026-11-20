@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const createChatbotSchema = z.object({
   type: z.enum(['CODE', 'APTITUDE']).default('CODE'),

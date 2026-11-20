@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const jobSchema = z.object({
   title: z.string().min(1),

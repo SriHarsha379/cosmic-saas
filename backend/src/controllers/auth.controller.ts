@@ -1,11 +1,10 @@
+import prisma from '../utils/prisma';
 import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
+import { requireEnv } from '../utils/env';
 
 const signupSchema = z.object({
   email: z.string().email(),
@@ -22,7 +21,7 @@ const loginSchema = z.object({
 const generateToken = (user: { id: string; email: string; role: string }) => {
   return jwt.sign(
     { id: user.id, email: user.email, role: user.role },
-    process.env.JWT_SECRET || 'fallback-secret',
+    requireEnv('JWT_SECRET'),
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' } as any
   );
 };

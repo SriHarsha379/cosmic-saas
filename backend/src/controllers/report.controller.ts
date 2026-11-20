@@ -1,8 +1,6 @@
 import { Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 export const getDashboardReport = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -16,14 +14,14 @@ export const getDashboardReport = async (req: AuthRequest, res: Response, next: 
     ] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        include: { progress: true, wallet: true },
+        include: { progressMetrics: true, wallet: true },
       }),
       prisma.activity.findMany({
         where: { userId },
-        orderBy: { timestamp: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: 10,
       }),
-      prisma.testResult.aggregate({
+      prisma.result.aggregate({
         where: { userId },
         _avg: { score: true, accuracy: true },
         _count: true,
@@ -38,27 +36,14 @@ export const getDashboardReport = async (req: AuthRequest, res: Response, next: 
     ]);
     res.json({
       success: true,
-      data: {
-        user,
-        recentActivities,
-        testStats,
-        applicationStats,
-        certificateCount: certificates,
-      },
+      data: { user, recentActivities, testStats, applicationStats, certificateCount: certificates },
     });
   } catch (err) { next(err); }
 };
 
 export const getAdminReport = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const [
-      userCount,
-      hackathonCount,
-      jobCount,
-      applicationCount,
-      testCount,
-      recentUsers,
-    ] = await Promise.all([
+    const [userCount, hackathonCount, jobCount, applicationCount, testCount, recentUsers] = await Promise.all([
       prisma.user.count(),
       prisma.hackathon.count(),
       prisma.job.count(),

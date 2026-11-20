@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const hackathonSchema = z.object({
   title: z.string().min(1),
@@ -95,6 +93,7 @@ export const createHackathon = async (req: AuthRequest, res: Response, next: Nex
         image: data.image,
         maxParticipants: data.maxParticipants || 100,
         prizePool: data.prizePool,
+        createdBy: req.user!.id,
       },
     });
     res.status(201).json({ success: true, data: hackathon });

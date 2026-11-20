@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const TEST_TYPES = [
   { id: 'SENTENCE_COMPLETION', name: 'Sentence Completion', description: 'Complete sentences to test grammar and vocabulary.' },

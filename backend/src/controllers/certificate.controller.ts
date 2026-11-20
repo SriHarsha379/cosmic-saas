@@ -1,22 +1,21 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../utils/prisma';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 export const listCertificates = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.userId || req.user!.id;
+    const isAdmin = req.user!.role === 'ADMIN';
+    const targetId = req.params.userId || req.user!.id;
+    // Non-admins can only see their own certificates
+    const userId = isAdmin ? targetId : req.user!.id;
     const certificates = await prisma.certificate.findMany({
       where: { userId },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
       orderBy: { issuedAt: 'desc' },
     });
     res.json({ success: true, data: certificates });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 export const getCertificate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -26,10 +25,11 @@ export const getCertificate = async (req: AuthRequest, res: Response, next: Next
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
     if (!cert) return res.status(404).json({ success: false, error: 'Certificate not found' });
+    if (cert.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
     res.json({ success: true, data: cert });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };
 
 export const issueCertificate = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -42,20 +42,11 @@ export const issueCertificate = async (req: AuthRequest, res: Response, next: Ne
     });
     const data = schema.parse(req.body);
     const cert = await prisma.certificate.create({
-      data: {
-        userId: data.userId,
-        title: data.title,
-        issuedBy: data.issuedBy,
-        certificateUrl: data.certificateUrl,
-      },
+      data: { userId: data.userId, title: data.title, issuedBy: data.issuedBy, certificateUrl: data.certificateUrl },
       include: { user: { select: { id: true, firstName: true, lastName: true } } },
     });
     await prisma.activity.create({
-      data: {
-        userId: data.userId,
-        type: 'EARNED_CERTIFICATE',
-        description: `Received certificate: ${data.title}`,
-      },
+      data: { userId: data.userId, type: 'EARNED_CERTIFICATE', description: `Received certificate: ${data.title}` },
     });
     res.status(201).json({ success: true, data: cert });
   } catch (err: any) {
@@ -66,9 +57,12 @@ export const issueCertificate = async (req: AuthRequest, res: Response, next: Ne
 
 export const deleteCertificate = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
+    const cert = await prisma.certificate.findUnique({ where: { id: req.params.id } });
+    if (!cert) return res.status(404).json({ success: false, error: 'Certificate not found' });
+    if (cert.userId !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Access denied' });
+    }
     await prisma.certificate.delete({ where: { id: req.params.id } });
     res.json({ success: true, data: { message: 'Certificate deleted' } });
-  } catch (err) {
-    next(err);
-  }
+  } catch (err) { next(err); }
 };

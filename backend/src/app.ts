@@ -1,6 +1,10 @@
+import helmet from 'helmet';
+import compression from 'compression';
 import express from 'express';
 import cors from 'cors';
 import { errorHandler } from './middleware/error';
+import { authLimiter, apiLimiter } from './middleware/rateLimiter';
+import { authLimiter, apiLimiter } from './middleware/rateLimiter';
 
 import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
@@ -26,13 +30,16 @@ import progressRoutes from './routes/progress.routes';
 
 const app = express();
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+app.use(compression());
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+app.use(express.json({ limit: "10kb" }));
+app.use(express.urlencoded({ extended: true, limit: "10kb" }));
 
 app.get('/health', (_req, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api', apiLimiter);
 app.use('/api/users', userRoutes);
 app.use('/api/hackathons', hackathonRoutes);
 app.use('/api/teams', teamRoutes);

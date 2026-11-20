@@ -1,8 +1,6 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const ACHIEVEMENTS = [
   { id: 'FIRST_TEST', name: 'First Test', description: 'Completed your first test.' },

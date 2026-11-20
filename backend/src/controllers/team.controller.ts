@@ -1,9 +1,7 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 const teamSchema = z.object({
   name: z.string().min(1),
@@ -120,6 +118,11 @@ export const respondJoinRequest = async (req: AuthRequest, res: Response, next: 
     if (!['ACCEPTED', 'REJECTED'].includes(status)) {
       return res.status(400).json({ success: false, error: 'Status must be ACCEPTED or REJECTED' });
     }
+    const joinReq = await prisma.joinRequest.findUnique({ where: { id: requestId }, include: { team: true } });
+    if (!joinReq) return res.status(404).json({ success: false, error: 'Join request not found' });
+    if (joinReq.team.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Only team leader can respond to requests' });
+    }
     const joinRequest = await prisma.joinRequest.update({
       where: { id: requestId },
       data: { status, respondedAt: new Date() },
@@ -134,6 +137,11 @@ export const respondJoinRequest = async (req: AuthRequest, res: Response, next: 
 export const removeMember = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id: teamId, userId } = req.params;
+    const team = await prisma.team.findUnique({ where: { id: teamId } });
+    if (!team) return res.status(404).json({ success: false, error: 'Team not found' });
+    if (team.createdBy !== req.user!.id && req.user!.role !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Only team leader can remove members' });
+    }
     await prisma.teamMember.delete({ where: { teamId_userId: { teamId, userId } } });
     res.json({ success: true, data: { message: 'Member removed' } });
   } catch (err) { next(err); }

@@ -1,12 +1,11 @@
+import prisma from '../utils/prisma';
 import { Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middleware/auth';
-
-const prisma = new PrismaClient();
 
 export const listActivities = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const userId = req.params.userId || req.user!.id;
+    const isAdmin = req.user!.role === 'ADMIN';
+    const userId = isAdmin ? (req.params.userId || req.user!.id) : req.user!.id;
     const limit = parseInt(req.query.limit as string) || 20;
     const page = parseInt(req.query.page as string) || 1;
     const skip = (page - 1) * limit;
